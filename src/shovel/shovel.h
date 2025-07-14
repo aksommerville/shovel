@@ -65,6 +65,12 @@ int sha_init(int rate,int chanc);
  */
 void sha_update(int framec);
 
+/* Main segment defines this, but our tooling takes care of it, game doesn't need to.
+ * This will not exist in web builds; there it has a privileged position in the ROM instead.
+ */
+extern const unsigned char shm_metadata[];
+extern const int shm_metadata_length;
+
 /* Platform API, for audio segment only.
  **************************************************************************/
 

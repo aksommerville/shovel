@@ -1,0 +1,7 @@
+# src/metadata
+# This is compiled into the ROM's metadata section for web builds, or "shm_metadata" for native builds.
+# "KEY=VALUE", leading and trailing space will trim. "#" is a line comment, start of line only.
+# Limit 255 bytes for both KEY and VALUE.
+
+ author = AK Sommerville 
+time=2025-07-14

@@ -17,6 +17,7 @@ I don't anticipate a lot of use of Shovel, maybe just the occasional size-coding
  - - I'm going with "Nothing". Games will be expected to bake their data into their wasm modules on their own.
  - - As I think about... Nothing is actually a pretty wise choice. Each segment only needs to embed the data it needs.
  - [x] Define API and data types.
- - [ ] Tooling.
+ - [x] Tooling.
+ - - Just the barest minimum to prove everything out.
  - [ ] Native runtime.
  - [ ] Web runtime.
