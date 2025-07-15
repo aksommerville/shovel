@@ -10,6 +10,13 @@ Instead of an independant project that games plug in with, Shovel will be a temp
 That's a lesson learned from Upsy-Downsy, which uses Pebble, and is the only game using Pebble. Silly to have two repos involved.
 I don't anticipate a lot of use of Shovel, maybe just the occasional size-coding challenge.
 
+Since we're going bare-minimum as a general principle, there will be a single-driver model for native builds.
+You must enable exactly one unit each for audio, video, and input, and those units export the same genericish symbols.
+
+An observer might be confused as to why we're not using a 3rd-party Javascript minifier.
+There's no doubt that doing so would lead to smaller distributables.
+But I want the project as self-contained as possible, so no 3rd-party code in the main build pipeline unless it's absolutely necessary.
+
 ## TODO
 
  - [x] I want to deliver the ROM statically instead of depending on a function call. Confirm that that's possible.
@@ -21,3 +28,9 @@ I don't anticipate a lot of use of Shovel, maybe just the occasional size-coding
  - - Just the barest minimum to prove everything out.
  - [ ] Native runtime.
  - [ ] Web runtime.
+ - - [ ] Gamepad
+ - - [ ] Audio
+ - - [ ] Message queues
+ - [ ] Consider abbreviating all the shared names, in the spirit of minification.
+ - [ ] Light bespoke minification of Javascript during the tool's "html" command.
+ - [ ] Insert title and favicon at tool html.

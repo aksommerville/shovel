@@ -15,8 +15,8 @@ tool_LD:=gcc
 tool_LDPOST:=-lm
 
 # "web" target is a little weird because we actually build two modules independently.
-web_MAIN_OPT_ENABLE:=
-web_AUDIO_OPT_ENABLE:=
+web_MAIN_OPT_ENABLE:=web
+web_AUDIO_OPT_ENABLE:=web
 web_MAIN_CC:=clang -c -MMD -O3 --target=wasm32 -nostdlib -Werror -Wno-comment -Wno-parentheses -Isrc -Wno-incompatible-library-redeclaration -Wno-builtin-requires-header $(call OPTDEF,web_MAIN)
 web_AUDIO_CC:=clang -c -MMD -O3 --target=wasm32 -nostdlib -Werror -Wno-comment -Wno-parentheses -Isrc -Wno-incompatible-library-redeclaration -Wno-builtin-requires-header $(call OPTDEF,web_AUDIO)
 web_MAIN_LD:=wasm-ld --no-entry -z stack-size=4194304 --no-gc-sections --import-undefined --export-table --export=shm_quit --export=shm_init --export=shm_update

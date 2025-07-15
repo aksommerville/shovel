@@ -4,6 +4,189 @@
 <!-- TODO Once it all works, refine the build tool to generate this HTML dynamically from templates.
   We'd like to add eg <title> and favicon per-project automatically, without changing the template.
 -->
+<style>
+#aw { display: none }
+html { background: #000; color: #fff }
+body { margin: 0; overflow: hidden }
+canvas { width: 100vw; height: 100vh; image-rendering: pixelated; object-fit: contain }
+</style>
+
+<!-- ############################# Audio Worklet ############################################## -->
+<xyz id="aw">
+</xyz>
+
+<!-- ############################# Main Runtime ############################################### -->
+<script>
+const
+  td = new TextDecoder("utf8"),
+  te = new TextEncoder("utf8"),
+  inp = [0, 0, 0, 0, 0, 0, 0, 0, 0],
+  km = { // Keyboard map: { [keyCode]: [playerid,btnid] }
+    ArrowLeft:  [1, 0x01],
+    ArrowRight: [1, 0x02],
+    ArrowUp:    [1, 0x04],
+    ArrowDown:  [1, 0x08],
+    Comma:      [1, 0x10],
+    Period:     [1, 0x20],
+    Enter:      [1, 0x40],
+    KeyA:       [2, 0x01],
+    KeyD:       [2, 0x02],
+    KeyW:       [2, 0x04],
+    KeyS:       [2, 0x08],
+    Space:      [2, 0x10],
+    KeyE:       [2, 0x20],
+    KeyR:       [2, 0x40],
+    Numpad4:    [3, 0x01],
+    Numpad6:    [3, 0x02],
+    Numpad8:    [3, 0x04],
+    Numpad5:    [3, 0x08],
+    Numpad2:    [3, 0x08],
+    Numpad0:    [3, 0x10],
+    NumpadAdd:  [3, 0x20],
+    NumpadEnter:[3, 0x40],
+  };
+let wi, mem, rom, fb, fbw, fbh, trm, cvs, ctx, imd;
+function zs(p) {
+  if (p < 0) return "";
+  let c=0;
+  while ((p + c < mem.length) && (c < 256) && mem[p + c]) c++;
+  return td.decode(new Uint8Array(mem.buffer, mem.byteOffset + p, c));
+  return "";
+}
+function rs(p, c) {
+  if ((p < 0) || (c < 0) || (p > mem.length - c)) return "";
+  return td.decode(new Uint8Array(mem.buffer, mem.byteOffset + p, c));
+}
+function ws(p, a, s) {
+  if ((p < 0) || (a < 0) || (p > mem.length - a) || (s.length < 1)) return 0;
+  s = te.encode(s);
+  let cpc = s.length;
+  if (cpc > a) s = new Uint8Array(s.buffer, 0, cpc = a);
+  const dv = new Uint8Array(mem.buffer, mem.byteOffset + p, cpc);
+  dv.set(s);
+  return cpc;
+}
+function shovel_store_get(vp, va, kp, kc) {
+  return ws(vp, va, localStorage.getItem(rs(kp, kc)));
+}
+function shovel_store_set(kp, kc, vp, vc) {
+  localStorage.setItem(rs(kp, kc), rs(vp, vc));
+  return 0;
+}
+function shovel_msg_send(p, c) {
+  const msg = rs(p, c);
+  console.log(`TODO:shovel_msg_send: ${JSON.stringify(msg)}`);//TODO
+  return 0;
+}
+function shovel_msg_receive(p, a) {
+  const msg = "";//TODO Pop one message from the queue.
+  return ws(p, a, msg);
+}
+function shovel_set_framebuffer(p, w, h) {
+  const l = w * h * 4;
+  if ((p < 0) || (p > mem.length - l)) return;
+  fb = new Uint8Array(mem.buffer, mem.byteOffset + p, l);
+  fbw = w;
+  fbh = h;
+}
+function ina() { // Initialize Audio. => Promise.
+  //TODO initialize audio
+  
+  return Promise.resolve();
+}
+function dec(s) { // Decode ROM. Returns (rom): { d: Metadata, m: Main serial, a: Audio serial }. Throws if malformed. byteOffset must be zero.
+  if (s.length < 20) throw new Error("Malformed ROM.");
+  if ((s[0] !== 0x00) || (s[1] !== 0x53) || (s[2] !== 0x56) || (s[3] !== 0x4c)) throw new Error("Malformed ROM.");
+  const tc = (s[4] << 24) | (s[5] << 16) | (s[6] << 8) | s[7];
+  const mdc = (s[8] << 24) | (s[9] << 16) | (s[10] << 8) | s[11];
+  const mc = (s[12] << 24) | (s[13] << 16) | (s[14] << 8) | s[15];
+  const ac = (s[16] << 24) | (s[17] << 16) | (s[18] << 8) | s[19];
+  if ((tc < 20) || (mdc < 0) || (mc < 0) || (ac < 0) || (tc + mdc + mc + ac > s.length)) throw new Error("Malformed ROM.");
+  const d = new Uint8Array(s.buffer, tc, mdc);
+  const m = new Uint8Array(s.buffer, tc + mdc, mc);
+  const a = new Uint8Array(s.buffer, tc + mdc + mc, ac);
+  return { d, m, a };
+}
+function ok(e) { // keydown,keyup
+  if (e.ctrlKey || e.altKey) return;
+  e.stopPropagation();
+  e.preventDefault();
+  const m = km[e.code];
+  if (m) {
+    if (e.type === "keydown") {
+      if (inp[m[0]] & m[1]) return;
+      inp[m[0]] |= m[1];
+      inp[0] |= m[1];
+    } else {
+      if (!(inp[m[0]] & m[1])) return;
+      inp[m[0]] &= ~m[1];
+      inp[0] &= ~m[1];
+    }
+  }
+}
+function ui() { // One-time UI preparation, game is initialized and about to start running.
+  document.getElementById("msg").remove();
+  cvs = document.createElement("CANVAS");
+  ctx = cvs.getContext("2d"); // XXX "renderbuffer" if you like, and also update fb delivery in (raf) below.
+  document.body.appendChild(cvs);
+  addEventListener("keydown", ok);
+  addEventListener("keyup", ok);
+}
+function raf() {
+  requestAnimationFrame(() => {
+    if (typeof(trm) === "number") {
+      wi.exports.shm_quit(trm);
+      console.log(`Terminated with status ${trm}.`);
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      return;
+    }
+    //TODO update gamepads
+    wi.exports.shm_update(0.100);//TODO elapsed
+    if (fb) {
+      if (!imd || (fbw !== imd.width) || (fbh !== imd.height)) {
+        cvs.width = fbw;
+        cvs.height = fbh;
+        imd = new ImageData(fbw, fbh);
+      }
+      imd.data.set(fb);
+      ctx.putImageData(imd, 0, 0); // XXX transferFromImageBitmap etc if you like, and change context mode above.
+      fb = null;
+    }
+    raf();
+  });
+}
+addEventListener("load", _ => {
+  fetch("game.rom").then(rsp => {
+    if (!rsp.ok) throw rsp;
+    return rsp.arrayBuffer();
+  }).then(serial => {
+    rom = dec(new Uint8Array(serial));
+    return WebAssembly.instantiate(rom.m, { env: {
+      shovel_log: p => console.log("GAME: " + zs(p)),
+      shovel_terminate: s => trm = s,
+      shovel_now_real: _ => Date.now() / 1000,
+      shovel_store_get,
+      shovel_store_set,
+      shovel_msg_send,
+      shovel_msg_receive,
+      shovel_get_input: p => inp[p],
+      shovel_set_framebuffer,
+    }});
+  }).then(({module:m, instance:i}) => {
+    wi = i;
+    mem = new Uint8Array(i.exports.memory.buffer);
+    return ina();
+  }).then(_ => {
+    if (wi.exports.shm_init() < 0) throw new Error("shm_init");
+    ui();
+    raf();
+  }).catch(e => {
+    console.error(e);
+    document.getElementById("msg").innerText = e.toString();
+  });
+}, { once: 1});
+</script>
+
 </head><body>
-<p>TODO: Shovel Web Runtime</p>
+<p id="msg">Loading</p>
 </body></html>

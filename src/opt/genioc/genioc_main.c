@@ -12,6 +12,13 @@ void shovel_terminate(int status) {
   terminate=1;
 }
 
+void shovel_set_framebuffer(const void *fb,int w,int h) {
+}
+
+int shovel_get_input(int playerid) {
+  return 0;
+}
+
 int main(int argc,char **argv) {
   fprintf(stderr,"genioc main (XXX highly stub)\n");
   if (shm_init()<0) {
