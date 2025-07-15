@@ -68,6 +68,7 @@ $(foreach T,$(WEBLIKE_TARGETS),$(eval $(call WEBLIKE_RULES,$T)))
 
 ifneq (,$(strip $(filter web,$(WEBLIKE_TARGETS))))
   #TODO This will need to be HTTPS. So generate a self-signed certificate, and write a node server.
+  #...or will it? Chrome 138 on Linux, I'm not getting any errors launching an AudioWorkletProcessor.
   serve:$(web_ROM) $(web_HTML);http-server -c-1 out/web
 endif
 

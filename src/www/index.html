@@ -13,6 +13,68 @@ canvas { width: 100vw; height: 100vh; image-rendering: pixelated; object-fit: co
 
 <!-- ############################# Audio Worklet ############################################## -->
 <xyz id="aw">
+class P extends AudioWorkletProcessor {
+  constructor(...args) {
+    super();
+    console.log(`RawwgAudioProcessor.ctor`, { args });
+    this.rom = null;
+    this.bufferv = [];
+    this.wasm = {};
+    this.port.onmessage = msg => {
+      if (msg.data?.wasm) {
+        console.log(`AudioWorkletProcessor receiving wasm`, msg.data.wasm);
+        this.prepareClient(msg.data.wasm).then(() => {
+          //TODO
+        }).catch((e) => {
+          console.error("Failed to initialize audio thread.", e);
+        });
+      } else {
+        console.log(`AudioWorkletProcessor unexpected message`, msg);
+      }
+    };
+  }
+  process(i, o, p) {
+    if (!this.run) return true;
+    // TODO If the update is longer than the client's buffer, run it in pieces.
+    this.upd(o[0][0].length);
+    for (let chid=o[0].length; chid-- >0; ) {
+      //TODO
+      //const src = this.bufferv[chid].slice(0, outputs[0][0].length);
+      //if (src) outputs[0][chid].set(src);
+    }
+    return true;
+  }
+  prepareClient(s) {
+    if (this.wi) throw new Error("Multiple audio init.");
+    return WebAssembly.instantiate(s, { env: {
+      shovel_set_pcm_buffer: (chid,p,c) => this.spb(chid,p,c),
+      shovel_log: p => console.log(`TODO: shovel_log for audio thread. ${p}.`),
+      shovel_msg_send: (p,c) => this.snd(p,c),
+      shovel_msg_receive: (p,a) => this.rcv(p,a),
+    }}).then(r => {
+      this.wi = r.instance;
+      this.mem = new Uint8Array(this.wi.exports.memory.buffer);
+      this.upd = this.wi.exports.sha_update; // (framec)=>void
+      if (this.wi.exports.sha_init(44100,2) < 0) { // TODO rate,chanc
+        throw new Error("sha_init failed");
+      }
+    }).then(() => {
+      this.run = true;
+    });
+  }
+  spb(chid, p, c) {
+    console.log(`[AUDIO] shovel_set_pcm_buffer ${chid},${p},${c}`);//TODO
+  }
+  snd(p, c) {
+    console.log(`[AUDIO] shovel_message_send ${p},${c}`);//TODO
+    return 0;
+  }
+  rcv(p, a) {
+    console.log(`[AUDIO] shovel_message_receive ${p},${a}`);//TODO
+    return 0;
+  }
+}
+registerProcessor("AWP", P);
 </xyz>
 
 <!-- ############################# Main Runtime ############################################### -->
@@ -45,7 +107,7 @@ const
     NumpadAdd:  [3, 0x20],
     NumpadEnter:[3, 0x40],
   };
-let wi, mem, rom, fb, fbw, fbh, trm, cvs, ctx, imd;
+let wi, mem, rom, fb, fbw, fbh, trm, cvs, ctx, imd, pvt, actx, an;
 function zs(p) {
   if (p < 0) return "";
   let c=0;
@@ -91,8 +153,22 @@ function shovel_set_framebuffer(p, w, h) {
 }
 function ina() { // Initialize Audio. => Promise.
   //TODO initialize audio
-  
-  return Promise.resolve();
+  console.log("ina....");
+  const js = new Blob([document.getElementById("aw").innerText], { type: "text/javascript" });
+  const url = URL.createObjectURL(js);
+  actx = new AudioContext();
+  return actx.audioWorklet.addModule(url).then(() => {
+    URL.revokeObjectURL(url);
+    console.log(`added audio module`);
+    addEventListener("mousedown", () => {//XXX Find a better way to wait for user input
+      if (actx.state === "suspended") {
+        actx.resume();
+      }
+      an = new AudioWorkletNode(actx, "AWP");
+      an.connect(actx.destination);
+      an.port.postMessage({ wasm: rom.a });
+    }, { once: true });
+  });
 }
 function dec(s) { // Decode ROM. Returns (rom): { d: Metadata, m: Main serial, a: Audio serial }. Throws if malformed. byteOffset must be zero.
   if (s.length < 20) throw new Error("Malformed ROM.");
@@ -133,7 +209,7 @@ function ui() { // One-time UI preparation, game is initialized and about to sta
   addEventListener("keyup", ok);
 }
 function raf() {
-  requestAnimationFrame(() => {
+  requestAnimationFrame(t => {
     if (typeof(trm) === "number") {
       wi.exports.shm_quit(trm);
       console.log(`Terminated with status ${trm}.`);
@@ -141,16 +217,21 @@ function raf() {
       return;
     }
     //TODO update gamepads
-    wi.exports.shm_update(0.100);//TODO elapsed
-    if (fb) {
-      if (!imd || (fbw !== imd.width) || (fbh !== imd.height)) {
-        cvs.width = fbw;
-        cvs.height = fbh;
-        imd = new ImageData(fbw, fbh);
+    let e = t - pvt;
+    if (e >= 14) {
+      pvt = t;
+      if (e > 19) e = 19;
+      wi.exports.shm_update(e / 1000);
+      if (fb) {
+        if (!imd || (fbw !== imd.width) || (fbh !== imd.height)) {
+          cvs.width = fbw;
+          cvs.height = fbh;
+          imd = new ImageData(fbw, fbh);
+        }
+        imd.data.set(fb);
+        ctx.putImageData(imd, 0, 0); // XXX transferFromImageBitmap etc if you like, and change context mode above.
+        fb = null;
       }
-      imd.data.set(fb);
-      ctx.putImageData(imd, 0, 0); // XXX transferFromImageBitmap etc if you like, and change context mode above.
-      fb = null;
     }
     raf();
   });
@@ -179,6 +260,7 @@ addEventListener("load", _ => {
   }).then(_ => {
     if (wi.exports.shm_init() < 0) throw new Error("shm_init");
     ui();
+    pvt = performance.now();
     raf();
   }).catch(e => {
     console.error(e);

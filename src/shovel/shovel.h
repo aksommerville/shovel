@@ -92,6 +92,18 @@ void shovel_set_pcm_buffer(int chid,const float *pcm,int framec);
  */
 void shovel_log(const char *msg);
 
+/* Queue messages for the other segment, or pull from your queue.
+ * shovel_msg_receive() will return zero if nothing more is pending.
+ * Messages longer than 256 bytes will be rejected.
+ * The platform has an internal limit of at least 16 messages and will reject new ones if full.
+ * If you supply a buffer too short at receive, we'll copy what fits, return the full length, and pop it from the queue.
+ * The remainder is gone forever.
+ * Typically messages only go in one direction, main=>audio, and are commands to play a song or sound.
+ * You're allowed to send from audio to main too, eg for reporting playhead position.
+ */
+int shovel_msg_send(const void *v,int c);
+int shovel_msg_receive(void *v,int a);
+
 /* Platform API, for main segment only.
  *******************************************************************************/
 
@@ -110,18 +122,6 @@ double shovel_now_real();
  */
 int shovel_store_get(char *v,int va,const char *k,int kc);
 int shovel_store_set(const char *k,int kc,const char *v,int vc);
-
-/* Queue messages for the other segment, or pull from your queue.
- * shovel_msg_receive() will return zero if nothing more is pending.
- * Messages longer than 256 bytes will be rejected.
- * The platform has an internal limit of at least 16 messages and will reject new ones if full.
- * If you supply a buffer too short at receive, we'll copy what fits, return the full length, and pop it from the queue.
- * The remainder is gone forever.
- * Typically messages only go in one direction, main=>audio, and are commands to play a song or sound.
- * You're allowed to send from audio to main too, eg for reporting playhead position.
- */
-int shovel_msg_send(const void *v,int c);
-int shovel_msg_receive(void *v,int a);
  
 #define SHOVEL_BTN_LEFT       0x01
 #define SHOVEL_BTN_RIGHT      0x02
