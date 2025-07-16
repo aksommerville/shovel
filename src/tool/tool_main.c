@@ -136,19 +136,26 @@ static int main_html() {
     fprintf(stderr,"%s: Expected exactly 1 input (template HTML), found %d.\n",g.exename,g.srcpathc);
     return -2;
   }
-  //TODO Eventually we'll want to minify and inline external references, and compose metadata like title and favicon. For now just copy the one file.
   char *html=0;
   int htmlc=file_read(&html,g.srcpathv[0]);
   if (htmlc<0) {
     fprintf(stderr,"%s: Failed to read file.\n",g.srcpathv[0]);
     return -2;
   }
-  int err=file_write(g.dstpath,html,htmlc);
+  struct sr_encoder dst={0};
+  int err=minify_html(&dst,html,htmlc,g.srcpathv[0]);
   free(html);
   if (err<0) {
-    fprintf(stderr,"%s: Failed to write file, %d bytes.\n",g.dstpath,htmlc);
+    if (err!=-2) fprintf(stderr,"%s: Unspecified error minifying html.\n",g.srcpathv[0]);
+    sr_encoder_cleanup(&dst);
     return -2;
   }
+  if (file_write(g.dstpath,dst.v,dst.c)<0) {
+    fprintf(stderr,"%s: Failed to write file, %d bytes.\n",g.dstpath,dst.c);
+    sr_encoder_cleanup(&dst);
+    return -2;
+  }
+  sr_encoder_cleanup(&dst);
   return 0;
 }
 
