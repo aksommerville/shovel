@@ -3,22 +3,19 @@
  * A shovel game has two segments: Main and Audio.
  * They're linked together natively, but in web are two independent Wasm modules.
  *
+ * "sh_" functions are provided by the platform for clients to call. Comments will note which segments are allowed to call it.
+ * "shm_" functions are implemented by the client's main segment.
+ * "sha_" functions are implemented by the client's audio segment.
+ * Names are deliberately terse, because they must be repeated a few times in the JS runtime.
+ *
  * ===== Shovel ROM Format =====
  * Binary file, big-endian integers.
  * Starts with TOC:
  *   4 Signature = "\0SVL"
- *   4 TOC length, ie offset to Metadata. >=20. (includes Signature and itself, so <8 doesn't make sense).
- *   4 Metadata length.
+ *   4 TOC length, ie offset to Main Segment. >=16. (includes Signature and itself, so <8 doesn't make sense).
  *   4 Main segment length.
  *   4 Audio segment length.
  *   ... Additional TOC space reserved for future use. Safe to ignore.
- * Followed by Metadata, zero or more of:
- *   1 kc
- *   1 vc
- *   ... k
- *   ... v
- *   (k,v) are ASCII strings.
- *   See etc/doc/metadata.txt for defined keys. TODO
  * Followed by Main segment, a WebAssembly module.
  * Followed by Audio segment, a WebAssembly module.
  */
@@ -65,12 +62,6 @@ int sha_init(int rate,int chanc);
  */
 void sha_update(int framec);
 
-/* Main segment defines this, but our tooling takes care of it, game doesn't need to.
- * This will not exist in web builds; there it has a privileged position in the ROM instead.
- */
-extern const unsigned char shm_metadata[];
-extern const int shm_metadata_length;
-
 /* Platform API, for audio segment only.
  **************************************************************************/
 
@@ -80,7 +71,7 @@ extern const int shm_metadata_length;
  * Buffers for channels the platform doesn't have will be ignored.
  * You must hang on to these buffers, and repopulate them at each sha_update().
  */
-void shovel_set_pcm_buffer(int chid,const float *pcm,int framec);
+void sh_spcm(int chid,const float *pcm,int framec);
 
 //TODO Should we provide some math functions? It would be trivial to export from the platform, and could spare a lot of trouble on the games' side.
  
@@ -90,7 +81,7 @@ void shovel_set_pcm_buffer(int chid,const float *pcm,int framec);
 /* Dump some text to the dev console.
  * Generally not visible to end users but not secret either.
  */
-void shovel_log(const char *msg);
+void sh_log(const char *msg);
 
 /* Queue messages for the other segment, or pull from your queue.
  * shovel_msg_receive() will return zero if nothing more is pending.
@@ -100,9 +91,10 @@ void shovel_log(const char *msg);
  * The remainder is gone forever.
  * Typically messages only go in one direction, main=>audio, and are commands to play a song or sound.
  * You're allowed to send from audio to main too, eg for reporting playhead position.
+ * "Message Send", "Message Receive".
  */
-int shovel_msg_send(const void *v,int c);
-int shovel_msg_receive(void *v,int a);
+int sh_ms(const void *v,int c);
+int sh_mr(void *v,int a);
 
 /* Platform API, for main segment only.
  *******************************************************************************/
@@ -110,31 +102,32 @@ int shovel_msg_receive(void *v,int a);
 /* Request platform to terminate at the next convenient moment.
  * Usually this does return, but it's allowed not to.
  */
-void shovel_terminate(int status);
+void sh_term(int status);
 
 /* Real time in seconds from some undefined epoch.
  * For game timing purposes, it's better to depend on (elapsed) passed to shm_update.
  */
-double shovel_now_real();
+double sh_now();
 
 /* Access to persistent key=value store.
  * Lengths are required and strings generally will not be NUL-terminated.
+ * "Store Get", "Store Set".
  */
-int shovel_store_get(char *v,int va,const char *k,int kc);
-int shovel_store_set(const char *k,int kc,const char *v,int vc);
+int sh_sg(char *v,int va,const char *k,int kc);
+int sh_ss(const char *k,int kc,const char *v,int vc);
  
-#define SHOVEL_BTN_LEFT       0x01
-#define SHOVEL_BTN_RIGHT      0x02
-#define SHOVEL_BTN_UP         0x04
-#define SHOVEL_BTN_DOWN       0x08
-#define SHOVEL_BTN_SOUTH      0x10 /* Primary. */
-#define SHOVEL_BTN_WEST       0x20 /* Secondary. */
-#define SHOVEL_BTN_AUX1       0x40
+#define SH_BTN_LEFT       0x01
+#define SH_BTN_RIGHT      0x02
+#define SH_BTN_UP         0x04
+#define SH_BTN_DOWN       0x08
+#define SH_BTN_SOUTH      0x10 /* Primary. */
+#define SH_BTN_WEST       0x20 /* Secondary. */
+#define SH_BTN_AUX1       0x40
 
 /* Get the state of a virtual input device, keyed by player id.
  * Player zero is the aggregate of all devices, and most appropriate for single-player games.
  */
-int shovel_get_input(int plrid);
+int sh_in(int plrid);
 
 /* Framebuffer is packed 32-bit RGBX. Red in the first byte. The X component is ignored.
  * Pixels are packed LRTB, each row being (w*4) bytes long.
@@ -143,6 +136,6 @@ int shovel_get_input(int plrid);
  * You *must* keep (rgbx) in scope after shm_update completes. Platform won't read it until after.
  * By the same token, changes to your pixels after this call will be visible.
  */
-void shovel_set_framebuffer(const void *rgbx,int w,int h);
+void sh_fb(const void *rgbx,int w,int h);
 
 #endif

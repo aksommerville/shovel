@@ -16,14 +16,14 @@ static struct player {
  */
  
 void shm_quit(int status) {
-  shovel_log("shm_quit");
+  sh_log("shm_quit");
 }
 
 /* Init.
  */
 
 int shm_init() {
-  shovel_log("shm_init");
+  sh_log("shm_init");
   
   playerv[0].x=1;
   playerv[0].y=FBH>>1;
@@ -60,18 +60,18 @@ void shm_update(double elapsed) {
   int i=0;
   struct player *player=playerv;
   for (;i<PLAYER_COUNT;i++,player++) {
-    int in=shovel_get_input(i+1);
+    int in=sh_in(i+1);
     if (in!=player->pvin) {
-      if ((in&SHOVEL_BTN_LEFT)&&!(player->pvin&SHOVEL_BTN_LEFT)&&(player->x>0)) player->x--;
-      if ((in&SHOVEL_BTN_RIGHT)&&!(player->pvin&SHOVEL_BTN_RIGHT)&&(player->x<FBW-1)) player->x++;
-      if ((in&SHOVEL_BTN_UP)&&!(player->pvin&SHOVEL_BTN_UP)&&(player->y>0)) player->y--;
-      if ((in&SHOVEL_BTN_DOWN)&&!(player->pvin&SHOVEL_BTN_DOWN)&&(player->y<FBH-1)) player->y++;
-      if ((in&SHOVEL_BTN_AUX1)&&!(player->pvin&SHOVEL_BTN_AUX1)) {
-        shovel_log("AUX1, terminating");
-        shovel_terminate(0);
+      if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)&&(player->x>0)) player->x--;
+      if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)&&(player->x<FBW-1)) player->x++;
+      if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)&&(player->y>0)) player->y--;
+      if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN)&&(player->y<FBH-1)) player->y++;
+      if ((in&SH_BTN_AUX1)&&!(player->pvin&SH_BTN_AUX1)) {
+        sh_log("AUX1, terminating");
+        sh_term(0);
       }
-      if (in&SHOVEL_BTN_WEST) player->hilite=2;
-      else if (in&SHOVEL_BTN_SOUTH) player->hilite=1;
+      if (in&SH_BTN_WEST) player->hilite=2;
+      else if (in&SH_BTN_SOUTH) player->hilite=1;
       else player->hilite=0;
       player->pvin=in;
     }
@@ -91,7 +91,7 @@ void shm_update(double elapsed) {
     fb[player->y*FBW+player->x]=color;
   }
   
-  shovel_set_framebuffer(fb, FBW, FBH);
+  sh_fb(fb, FBW, FBH);
 }
 
 /* Annoying clang glue.

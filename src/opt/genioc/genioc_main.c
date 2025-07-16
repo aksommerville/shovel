@@ -4,18 +4,18 @@
 
 static int terminate=0;
 
-void shovel_log(const char *msg) {
+void sh_log(const char *msg) {
   fprintf(stderr,"shovel_log: %s\n",msg);
 }
 
-void shovel_terminate(int status) {
+void sh_term(int status) {
   terminate=1;
 }
 
-void shovel_set_framebuffer(const void *fb,int w,int h) {
+void sh_fb(const void *fb,int w,int h) {
 }
 
-int shovel_get_input(int playerid) {
+int sh_in(int playerid) {
   return 0;
 }
 

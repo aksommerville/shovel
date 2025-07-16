@@ -16,13 +16,11 @@ canvas{width:100vw;height:100vh;image-rendering:pixelated;object-fit:contain}
 class P extends AudioWorkletProcessor {
   constructor(...args) {
     super();
-    console.log(`RawwgAudioProcessor.ctor`, { args });
     this.rom = null;
     this.bufferv = [];
     this.wasm = {};
     this.port.onmessage = msg => {
       if (msg.data?.wasm) {
-        console.log(`AudioWorkletProcessor receiving wasm`, msg.data.wasm);
         this.prepareClient(msg.data.wasm).then(() => {
           //TODO
         }).catch((e) => {
@@ -47,10 +45,10 @@ class P extends AudioWorkletProcessor {
   prepareClient(s) {
     if (this.wi) throw new Error("Multiple audio init.");
     return WebAssembly.instantiate(s, { env: {
-      shovel_set_pcm_buffer: (chid,p,c) => this.spb(chid,p,c),
-      shovel_log: p => console.log(`TODO: shovel_log for audio thread. ${p}.`),
-      shovel_msg_send: (p,c) => this.snd(p,c),
-      shovel_msg_receive: (p,a) => this.rcv(p,a),
+      sh_spcm: (chid,p,c) => this.spb(chid,p,c),
+      sh_log: p => console.log(`TODO: shovel_log for audio thread. ${p}.`),
+      sh_ms: (p,c) => this.snd(p,c),
+      sh_mr: (p,a) => this.rcv(p,a),
     }}).then(r => {
       this.wi = r.instance;
       this.mem = new Uint8Array(this.wi.exports.memory.buffer);
@@ -63,14 +61,14 @@ class P extends AudioWorkletProcessor {
     });
   }
   spb(chid, p, c) {
-    console.log(`[AUDIO] shovel_set_pcm_buffer ${chid},${p},${c}`);//TODO
+    console.log(`[AUDIO] sh_spcm ${chid},${p},${c}`);//TODO
   }
   snd(p, c) {
-    console.log(`[AUDIO] shovel_message_send ${p},${c}`);//TODO
+    console.log(`[AUDIO] sh_ms ${p},${c}`);//TODO
     return 0;
   }
   rcv(p, a) {
-    console.log(`[AUDIO] shovel_message_receive ${p},${a}`);//TODO
+    console.log(`[AUDIO] sh_mr ${p},${a}`);//TODO
     return 0;
   }
 }
@@ -128,23 +126,23 @@ function ws(p, a, s) {
   dv.set(s);
   return cpc;
 }
-function shovel_store_get(vp, va, kp, kc) {
+function sh_sg(vp, va, kp, kc) {
   return ws(vp, va, localStorage.getItem(rs(kp, kc)));
 }
-function shovel_store_set(kp, kc, vp, vc) {
+function sh_ss(kp, kc, vp, vc) {
   localStorage.setItem(rs(kp, kc), rs(vp, vc));
   return 0;
 }
-function shovel_msg_send(p, c) {
+function sh_ms(p, c) {
   const msg = rs(p, c);
   console.log(`TODO:shovel_msg_send: ${JSON.stringify(msg)}`);//TODO
   return 0;
 }
-function shovel_msg_receive(p, a) {
+function sh_mr(p, a) {
   const msg = "";//TODO Pop one message from the queue.
   return ws(p, a, msg);
 }
-function shovel_set_framebuffer(p, w, h) {
+function sh_fb(p, w, h) {
   const l = w * h * 4;
   if ((p < 0) || (p > mem.length - l)) return;
   fb = new Uint8Array(mem.buffer, mem.byteOffset + p, l);
@@ -170,18 +168,16 @@ function ina() { // Initialize Audio. => Promise.
     }, { once: true });
   });
 }
-function dec(s) { // Decode ROM. Returns (rom): { d: Metadata, m: Main serial, a: Audio serial }. Throws if malformed. byteOffset must be zero.
-  if (s.length < 20) throw new Error("Malformed ROM.");
+function dec(s) { // Decode ROM. Returns (rom): { m: Main serial, a: Audio serial }. Throws if malformed. byteOffset must be zero.
+  if (s.length < 16) throw new Error("Malformed ROM.");
   if ((s[0] !== 0x00) || (s[1] !== 0x53) || (s[2] !== 0x56) || (s[3] !== 0x4c)) throw new Error("Malformed ROM.");
   const tc = (s[4] << 24) | (s[5] << 16) | (s[6] << 8) | s[7];
-  const mdc = (s[8] << 24) | (s[9] << 16) | (s[10] << 8) | s[11];
-  const mc = (s[12] << 24) | (s[13] << 16) | (s[14] << 8) | s[15];
-  const ac = (s[16] << 24) | (s[17] << 16) | (s[18] << 8) | s[19];
-  if ((tc < 20) || (mdc < 0) || (mc < 0) || (ac < 0) || (tc + mdc + mc + ac > s.length)) throw new Error("Malformed ROM.");
-  const d = new Uint8Array(s.buffer, tc, mdc);
-  const m = new Uint8Array(s.buffer, tc + mdc, mc);
-  const a = new Uint8Array(s.buffer, tc + mdc + mc, ac);
-  return { d, m, a };
+  const mc = (s[8] << 24) | (s[9] << 16) | (s[10] << 8) | s[11];
+  const ac = (s[12] << 24) | (s[13] << 16) | (s[14] << 8) | s[15];
+  if ((tc < 16) || (mc < 0) || (ac < 0) || (tc + mc + ac > s.length)) throw new Error("Malformed ROM.");
+  const m = new Uint8Array(s.buffer, tc, mc);
+  const a = new Uint8Array(s.buffer, tc + mc, ac);
+  return { m, a };
 }
 function ok(e) { // keydown,keyup
   if (e.ctrlKey || e.altKey) return;
@@ -243,15 +239,15 @@ addEventListener("load", _ => {
   }).then(serial => {
     rom = dec(new Uint8Array(serial));
     return WebAssembly.instantiate(rom.m, { env: {
-      shovel_log: p => console.log("GAME: " + zs(p)),
-      shovel_terminate: s => trm = s,
-      shovel_now_real: _ => Date.now() / 1000,
-      shovel_store_get,
-      shovel_store_set,
-      shovel_msg_send,
-      shovel_msg_receive,
-      shovel_get_input: p => inp[p],
-      shovel_set_framebuffer,
+      sh_log: p => console.log("GAME: " + zs(p)),
+      sh_term: s => trm = s,
+      sh_now: _ => Date.now() / 1000,
+      sh_sg,
+      sh_ss,
+      sh_ms,
+      sh_mr,
+      sh_in: p => inp[p],
+      sh_fb,
     }});
   }).then(({module:m, instance:i}) => {
     wi = i;

@@ -4,7 +4,7 @@
  */
  
 int sha_init(int rate,int chanc) {
-  shovel_log("sha_init");
+  sh_log("sha_init");
   return 0;
 }
 

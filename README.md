@@ -32,7 +32,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [ ] Audio
  - - [ ] Message queues
  - - [ ] focus/blur
- - [ ] Consider abbreviating all the shared names, in the spirit of minification.
+ - [x] Consider abbreviating all the shared names, in the spirit of minification.
  - [x] Light bespoke minification of Javascript during the tool's "html" command.
  - [ ] Insert title and favicon at tool html.
  - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
