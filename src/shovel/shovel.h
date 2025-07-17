@@ -73,6 +73,12 @@ void sha_update(int framec);
  */
 void sh_spcm(int chid,const float *pcm,int framec);
 
+/* Receive the next message from main segment.
+ * This is a one-way line of communication: Audio segment can read but not write.
+ * Returns zero if nothing is queued.
+ */
+int sh_mr(void *v,int a);
+
 //TODO Should we provide some math functions? It would be trivial to export from the platform, and could spare a lot of trouble on the games' side.
  
 /* Platform API, for both segments.
@@ -83,21 +89,14 @@ void sh_spcm(int chid,const float *pcm,int framec);
  */
 void sh_log(const char *msg);
 
-/* Queue messages for the other segment, or pull from your queue.
- * shovel_msg_receive() will return zero if nothing more is pending.
- * Messages longer than 256 bytes will be rejected.
- * The platform has an internal limit of at least 16 messages and will reject new ones if full.
- * If you supply a buffer too short at receive, we'll copy what fits, return the full length, and pop it from the queue.
- * The remainder is gone forever.
- * Typically messages only go in one direction, main=>audio, and are commands to play a song or sound.
- * You're allowed to send from audio to main too, eg for reporting playhead position.
- * "Message Send", "Message Receive".
- */
-int sh_ms(const void *v,int c);
-int sh_mr(void *v,int a);
-
 /* Platform API, for main segment only.
  *******************************************************************************/
+
+/* Queue a message for delivery to the audio segment.
+ * Empty messages are an error.
+ * Platform copies it immediately.
+ */
+int sh_ms(const void *v,int c);
 
 /* Request platform to terminate at the next convenient moment.
  * Usually this does return, but it's allowed not to.

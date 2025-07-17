@@ -23,28 +23,28 @@ web_MAIN_LD:=wasm-ld --no-entry -z stack-size=4194304 --no-gc-sections --import-
 web_AUDIO_LD:=wasm-ld --no-entry -z stack-size=4194304 --no-gc-sections --import-undefined --export-table --export=sha_init --export=sha_update
 
 # "generic" to build a headless native version of the app, maybe for automated testing?
-generic_OPT_ENABLE:=genioc
+generic_OPT_ENABLE:=genioc io a_dummy v_dummy i_dummy
 generic_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,generic)
 generic_LD:=gcc
 generic_LDPOST:=-lm
 generic_EXE:=out/generic/$(PROJNAME)
 
 # "linux": Highly configurable. You must ensure that CC, LD, and LDPOST agree with OPT_ENABLE. See the relevant opt headers for more.
-linux_OPT_ENABLE:=genioc
+linux_OPT_ENABLE:=genioc io a_dummy v_dummy i_dummy
 linux_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,linux)
 linux_LD:=gcc
 linux_LDPOST:=-lm
 linux_EXE:=out/linux/$(PROJNAME)
 
 # "macos" has additional packaging rules managed by Makefile. We're only concerned here with the executable, which works just like other hosts.
-macos_OPT_ENABLE:=macos
+macos_OPT_ENABLE:=macos io
 macos_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,macos)
 macos_LD:=gcc
 macos_LDPOST:=-lm
 macos_EXE:=out/macos/$(PROJNAME).app/Contents/MacOS/$(PROJNAME)
 
 # "mswin" isn't currently implemented and probably never will be.
-mswin_OPT_ENABLE:=mswin genioc
+mswin_OPT_ENABLE:=mswin genioc io
 mswin_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,mswin)
 mswin_LD:=gcc
 mswin_LDPOST:=-lm

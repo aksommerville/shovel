@@ -47,7 +47,6 @@ class P extends AudioWorkletProcessor {
     return WebAssembly.instantiate(s, { env: {
       sh_spcm: (chid,p,c) => this.spb(chid,p,c),
       sh_log: p => console.log(`TODO: shovel_log for audio thread. ${p}.`),
-      sh_ms: (p,c) => this.snd(p,c),
       sh_mr: (p,a) => this.rcv(p,a),
     }}).then(r => {
       this.wi = r.instance;
@@ -61,11 +60,8 @@ class P extends AudioWorkletProcessor {
     });
   }
   spb(chid, p, c) {
+    if (this.run) return; // Only valid during sha_init.
     console.log(`[AUDIO] sh_spcm ${chid},${p},${c}`);//TODO
-  }
-  snd(p, c) {
-    console.log(`[AUDIO] sh_ms ${p},${c}`);//TODO
-    return 0;
   }
   rcv(p, a) {
     console.log(`[AUDIO] sh_mr ${p},${a}`);//TODO
@@ -137,10 +133,6 @@ function sh_ms(p, c) {
   const msg = rs(p, c);
   console.log(`TODO:shovel_msg_send: ${JSON.stringify(msg)}`);//TODO
   return 0;
-}
-function sh_mr(p, a) {
-  const msg = "";//TODO Pop one message from the queue.
-  return ws(p, a, msg);
 }
 function sh_fb(p, w, h) {
   const l = w * h * 4;
@@ -245,7 +237,6 @@ addEventListener("load", _ => {
       sh_sg,
       sh_ss,
       sh_ms,
-      sh_mr,
       sh_in: p => inp[p],
       sh_fb,
     }});
