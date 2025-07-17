@@ -30,10 +30,10 @@ generic_LDPOST:=-lm
 generic_EXE:=out/generic/$(PROJNAME)
 
 # "linux": Highly configurable. You must ensure that CC, LD, and LDPOST agree with OPT_ENABLE. See the relevant opt headers for more.
-linux_OPT_ENABLE:=genioc io a_dummy v_dummy i_dummy
+linux_OPT_ENABLE:=genioc io a_pulse v_xegl i_evdev xinerama
 linux_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,linux)
 linux_LD:=gcc
-linux_LDPOST:=-lm
+linux_LDPOST:=-lm -lpulse-simple -lX11 -lXinerama -lGL -lEGL
 linux_EXE:=out/linux/$(PROJNAME)
 
 # "macos" has additional packaging rules managed by Makefile. We're only concerned here with the executable, which works just like other hosts.

@@ -10,11 +10,17 @@
 #include <limits.h>
 
 #define MSG_LIMIT 32
+#define TARGET_PERIOD (1.0/60.0)
+#define MIN_PERIOD 0.012
+#define MAX_PERIOD 0.019
 
 extern struct genioc {
   const char *exename;
   volatile int sigc;
   int exitstatus;
+  double recent_time;
+  int framec,clockfaultc;
+  double starttime_real,starttime_cpu;
   
   struct msg {
     void *v;
@@ -32,5 +38,7 @@ extern struct genioc {
 
 int genioc_store_load();
 int genioc_store_save();
+
+double now_cpu();
 
 #endif

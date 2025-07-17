@@ -1,5 +1,6 @@
 #include "genioc_internal.h"
 #include <sys/time.h>
+#include <time.h>
 
 /* sh_log
  */
@@ -66,6 +67,13 @@ double sh_now() {
   struct timeval tv={0};
   gettimeofday(&tv,0);
   return (double)tv.tv_sec+(double)tv.tv_usec/1000000.0;
+}
+
+// genioc private, not part of shovel api. but it belongs with its sister ^
+double now_cpu() {
+  struct timespec tv={0};
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&tv);
+  return (double)tv.tv_sec+(double)tv.tv_nsec/1000000000.0;
 }
 
 /* sh_sg

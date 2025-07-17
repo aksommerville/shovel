@@ -20,12 +20,19 @@ static void rcvsig(int sigid) {
  */
  
 static void genioc_quit() {
-  //TODO Print performance stats if available.
+  double endtime_real=sh_now();
+  double endtime_cpu=now_cpu();
   io_audio_quit();
   io_video_quit();
   io_input_quit();
   if (genioc.exitstatus) {
     fprintf(stderr,"%s: Abnormal exit.\n",genioc.exename);
+  } else if (genioc.framec>0) {
+    double elapsed_real=endtime_real-genioc.starttime_real;
+    double elapsed_cpu=endtime_cpu-genioc.starttime_cpu;
+    double avgrate=(double)genioc.framec/elapsed_real;
+    double cpuload=elapsed_cpu/elapsed_real;
+    fprintf(stderr,"%s: %d frames in %.03f s, avg %.03f Hz, cpu %.06f\n",genioc.exename,genioc.framec,elapsed_real,avgrate,cpuload);
   } else {
     fprintf(stderr,"%s: Normal exit.\n",genioc.exename);
   }
@@ -85,12 +92,18 @@ static int genioc_init(int argc,char **argv) {
       return -2;
     }
   }
+  fprintf(stderr,
+    "%s: Initialized drivers: video=%s audio=%s input=%s\n",
+    genioc.exename,io_video_driver_name,io_audio_driver_name,io_input_driver_name
+  );
   if (shm_init()<0) {
     fprintf(stderr,"%s: Failed to initialize game.\n",genioc.exename);
     return -2;
   }
   io_audio_set_running(1);
-  //TODO Initialize performance monitor.
+  genioc.starttime_real=sh_now();
+  genioc.starttime_cpu=now_cpu();
+  genioc.recent_time=genioc.starttime_real-TARGET_PERIOD-0.001;
   return 0;
 }
 
@@ -98,9 +111,28 @@ static int genioc_init(int argc,char **argv) {
  */
  
 static int genioc_update() {
-  double elapsed=0.100;//TODO Timing.
-  usleep((int)(elapsed*1000000.0));
   int err;
+
+  // Tick the clock and force to a reasonable interval.
+  double now=sh_now();
+  double elapsed=now-genioc.recent_time;
+  if (elapsed>0.500) { // Unreasonably high. Fault.
+    elapsed=TARGET_PERIOD;
+    genioc.clockfaultc++;
+  } else if (elapsed<0.0) { // Impossibly low. Fault.
+    elapsed=TARGET_PERIOD;
+    genioc.clockfaultc++;
+  } else while (elapsed<TARGET_PERIOD) {
+    usleep((int)((TARGET_PERIOD-elapsed)*1000000.0)+500); // +500us because it's better to overshoot consistently than to need to repeat.
+    now=sh_now();
+    elapsed=now-genioc.recent_time;
+  }
+  if (elapsed<MIN_PERIOD) elapsed=MIN_PERIOD;
+  else if (elapsed>MAX_PERIOD) elapsed=MAX_PERIOD;
+  genioc.recent_time=now;
+  genioc.framec++;
+
+  // Update I/O drivers.
   if ((err=io_video_update())<0) {
     if (err!=-2) fprintf(stderr,"%s: Error updating video driver.\n",genioc.exename);
     return -2;
@@ -114,7 +146,15 @@ static int genioc_update() {
     if (err!=-2) fprintf(stderr,"%s: Error updating input driver.\n",genioc.exename);
     return -2;
   }
+  
+  // Update game.
   shm_update(elapsed);
+  
+  // Commit the video frame if there is one (io figures it out).
+  if ((err=io_video_commit())<0) {
+    if (err!=-2) fprintf(stderr,"%s: Error sending video frame.\n",genioc.exename);
+    return -2;
+  }
   return 0;
 }
 

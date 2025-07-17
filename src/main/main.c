@@ -74,6 +74,22 @@ void shm_update(double elapsed) {
       else if (in&SH_BTN_SOUTH) player->hilite=1;
       else player->hilite=0;
       player->pvin=in;
+      if (0) {
+        char msg[]={
+          '0'+i+1,
+          ':',
+          ' ',
+          (in&SH_BTN_LEFT)?'l':'.',
+          (in&SH_BTN_RIGHT)?'r':'.',
+          (in&SH_BTN_UP)?'u':'.',
+          (in&SH_BTN_DOWN)?'d':'.',
+          (in&SH_BTN_SOUTH)?'a':'.',
+          (in&SH_BTN_WEST)?'b':'.',
+          (in&SH_BTN_AUX1)?'s':'.',
+          0,
+        };
+        sh_log(msg);
+      }
     }
   }
   

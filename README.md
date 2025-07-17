@@ -26,11 +26,11 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - [x] Define API and data types.
  - [x] Tooling.
  - - Just the barest minimum to prove everything out.
- - [ ] Native runtime.
- - - [ ] evdev
- - - [ ] xegl
- - - [ ] pulse
- - - [ ] Timing and performance report.
+ - [x] Native runtime.
+ - - [x] evdev
+ - - [x] xegl
+ - - [x] pulse
+ - - [x] Timing and performance report.
  - [ ] Web runtime.
  - - [ ] Gamepad
  - - [ ] Audio
@@ -40,9 +40,16 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - [x] Light bespoke minification of Javascript during the tool's "html" command.
  - [ ] Insert title and favicon at tool html.
  - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
+ - [ ] Native: hard pause on blur.
+ - [ ] Native: General input mapping.
+ - [ ] Native: Suppress screensaver on gamepad input.
  - [ ] Remaining linux drivers: drm,alsafd,asound,bcm. Can and should we do an X11 no-GX driver?
  - [ ] MacOS drivers.
  - [ ] MS Windows drivers.
  - [ ] SDL drivers?
  - [ ] genioc: argv
  - [ ] Record and playback native sessions. Playback in headless with video and audio capture.
+ - [ ] Aggressive native minification.
+ - - [ ] Compile options. Remove all symbols, etc.
+ - - [ ] Drivers are mostly generic with glue, can be made substantially smaller.
+ - - [ ] Eliminate or reduce log messages?
