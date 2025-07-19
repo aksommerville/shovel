@@ -19,25 +19,11 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
 ## TODO
 
- - [x] I want to deliver the ROM statically instead of depending on a function call. Confirm that that's possible.
- - - It is not possible. Options: Fetch function, Export pre-sized buffer, Bake in automatically, or do Nothing.
- - - I'm going with "Nothing". Games will be expected to bake their data into their wasm modules on their own.
- - - As I think about... Nothing is actually a pretty wise choice. Each segment only needs to embed the data it needs.
- - [x] Define API and data types.
- - [x] Tooling.
- - - Just the barest minimum to prove everything out.
- - [x] Native runtime.
- - - [x] evdev
- - - [x] xegl
- - - [x] pulse
- - - [x] Timing and performance report.
  - [ ] Web runtime.
  - - [ ] Gamepad
  - - [ ] Audio
  - - [ ] Message queues
  - - [ ] focus/blur
- - [x] Consider abbreviating all the shared names, in the spirit of minification.
- - [x] Light bespoke minification of Javascript during the tool's "html" command.
  - [ ] Insert title and favicon at tool html.
  - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
  - [ ] Native: hard pause on blur.
