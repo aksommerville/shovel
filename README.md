@@ -21,7 +21,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
  - [x] Insert title and favicon at tool html. ...XXX it's no problem to add those manually.
  - [x] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
- - [ ] Native: hard pause on blur.
+ - [x] Native: hard pause on blur.
  - [ ] Native: General input mapping.
  - [ ] Native: Suppress screensaver on gamepad input.
  - [ ] Remaining linux drivers: drm,alsafd,asound,bcm. Can and should we do an X11 no-GX driver?

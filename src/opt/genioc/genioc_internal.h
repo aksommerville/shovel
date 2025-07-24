@@ -21,6 +21,7 @@ extern struct genioc {
   double recent_time;
   int framec,clockfaultc;
   double starttime_real,starttime_cpu;
+  int blurpause; // Nonzero if blurred.
   
   struct msg {
     void *v;

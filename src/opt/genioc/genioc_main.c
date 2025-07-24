@@ -46,7 +46,17 @@ static void genioc_cb_close() {
 }
 
 static void genioc_cb_focus(int focus) {
-  fprintf(stderr,"TODO: %s %d\n",__func__,focus); //TODO hard pause when blurred
+  if (focus) {
+    if (genioc.blurpause) {
+      genioc.blurpause=0;
+      io_audio_set_running(1);
+    }
+  } else {
+    if (!genioc.blurpause) {
+      genioc.blurpause=1;
+      io_audio_set_running(0);
+    }
+  }
 }
 
 /* Init.
@@ -146,6 +156,9 @@ static int genioc_update() {
     if (err!=-2) fprintf(stderr,"%s: Error updating input driver.\n",genioc.exename);
     return -2;
   }
+  
+  // If we're hard-paused, get out.
+  if (genioc.blurpause) return 0;
   
   // Update game.
   shm_update(elapsed);
