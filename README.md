@@ -19,11 +19,11 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
 ## TODO
 
- - [ ] Web runtime.
+ - [x] Web runtime.
  - - [x] Gamepad
  - - [x] Audio
  - - [x] Message queues
- - - [ ] focus/blur
+ - - [x] focus/blur
  - [ ] Insert title and favicon at tool html.
  - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
  - [ ] Native: hard pause on blur.
