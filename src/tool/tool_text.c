@@ -131,7 +131,7 @@ int js_token_measure(const char *src,int srcc) {
     }
     if (src[1]=='*') {
       int srcp=2;
-      for (;;) {
+      for (;;srcp++) {
         if (srcp>srcc-2) return -1; // Unclosed block comment.
         if (!memcmp(src+srcp,"*/",2)) return srcp+2;
       }

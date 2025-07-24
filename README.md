@@ -20,7 +20,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 ## TODO
 
  - [ ] Web runtime.
- - - [ ] Gamepad
+ - - [x] Gamepad
  - - [x] Audio
  - - [x] Message queues
  - - [ ] focus/blur

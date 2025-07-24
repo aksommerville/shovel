@@ -160,20 +160,25 @@ function sh_fb(p, w, h) {
   fbw = w;
   fbh = h;
 }
+function ina2() {
+  an = new AudioWorkletNode(actx, "AWP");
+  an.connect(actx.destination);
+  an.port.postMessage({ wasm: rom.a, r: actx.sampleRate, c: actx.destination.channelCount });
+}
 function ina() { // Initialize Audio. => Promise.
   const js = new Blob([document.getElementById("aw").innerText], { type: "text/javascript" });
   const url = URL.createObjectURL(js);
   actx = new AudioContext({ latencyHint: "interactive" });
   return actx.audioWorklet.addModule(url).then(() => {
     URL.revokeObjectURL(url);
-    addEventListener("mousedown", () => {//XXX Find a better way to wait for user input
-      if (actx.state === "suspended") {
-        actx.resume();
-      }
-      an = new AudioWorkletNode(actx, "AWP");
-      an.connect(actx.destination);
-      an.port.postMessage({ wasm: rom.a, r: actx.sampleRate, c: actx.destination.channelCount });
-    }, { once: true });
+    // In Chrome, an initial AudioContext state of "suspended" means user interaction is required.
+    if (actx.state === "suspended") {
+      addEventListener("click", () => {
+        actx.resume().then(ina2);
+      }, { once: 1 });
+    } else {
+      ina2();
+    }
   });
 }
 function dec(s) { // Decode ROM. Returns (rom): { m: Main serial, a: Audio serial }. Throws if malformed. byteOffset must be zero.
@@ -204,6 +209,32 @@ function ok(e) { // keydown,keyup
     }
   }
 }
+function gp() { // Poll gamepads. Assume Standard Mapping, and assign to players in order.
+  let pid = 0;
+  for (const g of navigator?.getGamepads?.()) {
+    const b = (p, d) => {
+      if (g.buttons[p]?.value) {
+        if (inp[pid] & d) return;
+        inp[pid] |= d;
+        inp[0] |= d;
+      } else {
+        if (!(inp[pid] & d)) return;
+        inp[pid] &= ~d;
+        inp[0] &= ~d;
+      }
+    };
+    if (g) {
+      pid++;
+      b(0, 0x10); // south
+      b(2, 0x20); // west
+      b(9, 0x40); // start
+      b(12, 0x04); // up
+      b(13, 0x08); // down
+      b(14, 0x01); // left
+      b(15, 0x02); // right
+    }
+  }
+}
 function ui() { // One-time UI preparation, game is initialized and about to start running.
   document.getElementById("msg").remove();
   cvs = document.createElement("CANVAS");
@@ -221,7 +252,7 @@ function raf() {
       actx?.suspend();
       return;
     }
-    //TODO update gamepads
+    gp();
     let e = t - pvt;
     if (e >= 14) {
       pvt = t;
