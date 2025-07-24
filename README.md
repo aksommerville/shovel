@@ -19,13 +19,8 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
 ## TODO
 
- - [x] Web runtime.
- - - [x] Gamepad
- - - [x] Audio
- - - [x] Message queues
- - - [x] focus/blur
- - [ ] Insert title and favicon at tool html.
- - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
+ - [x] Insert title and favicon at tool html. ...XXX it's no problem to add those manually.
+ - [x] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
  - [ ] Native: hard pause on blur.
  - [ ] Native: General input mapping.
  - [ ] Native: Suppress screensaver on gamepad input.
@@ -39,3 +34,12 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [ ] Compile options. Remove all symbols, etc.
  - - [ ] Drivers are mostly generic with glue, can be made substantially smaller.
  - - [ ] Eliminate or reduce log messages?
+ - [ ] Optional client-side utilities.
+ - - [ ] malloc
+ - - [ ] math
+ - - [ ] PRNG
+ - - [ ] Trivial synthesizer. Thinking square waves only, with no envelopes. Atari style.
+ - - [ ] Slightly nicer synthesizer.
+ - - [ ] 1-bit renderer. Each blit takes a 1-bit image and two colors.
+ - - [ ] Slightly nicer renderer.
+ - - [ ] PNG-like image decoder. Can we use regular PNG? Would need zlib.
