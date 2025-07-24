@@ -52,6 +52,14 @@ static void fill_rect(int x,int y,int w,int h,uint32_t color) { // Must be in bo
   }
 }
 
+/* Send a message to the synthesizer.
+ */
+ 
+static void synth_event(int v) {
+  unsigned char msg=v;
+  sh_ms(&msg,1);
+}
+
 /* Update.
  */
 
@@ -62,6 +70,12 @@ void shm_update(double elapsed) {
   for (;i<PLAYER_COUNT;i++,player++) {
     int in=sh_in(i+1);
     if (in!=player->pvin) {
+    
+      if (!i) { // first player also triggers synth events
+        if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)&&(player->y>0)) synth_event(-1);
+        if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN)&&(player->y<FBH-1)) synth_event(1);
+      }
+    
       if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)&&(player->x>0)) player->x--;
       if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)&&(player->x<FBW-1)) player->x++;
       if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)&&(player->y>0)) player->y--;

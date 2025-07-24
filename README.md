@@ -21,8 +21,8 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
  - [ ] Web runtime.
  - - [ ] Gamepad
- - - [ ] Audio
- - - [ ] Message queues
+ - - [x] Audio
+ - - [x] Message queues
  - - [ ] focus/blur
  - [ ] Insert title and favicon at tool html.
  - [ ] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.

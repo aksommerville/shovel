@@ -19,6 +19,15 @@ int sha_init(int rate,int chanc) {
  */
  
 void sha_update(int framec) {
+
+  unsigned char msg;
+  while (sh_mr(&msg,1)>=1) {
+    switch (msg) {
+      case 1: halfperiod<<=1; break;
+      case 0xff: halfperiod>>=1; break;
+    }
+  }
+
   float *dst=buffer;
   for (;framec-->0;dst++) {
     *dst=level;
