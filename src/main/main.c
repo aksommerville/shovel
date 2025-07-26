@@ -33,6 +33,8 @@ static struct player {
   uint8_t xform;
 } playerv[PLAYER_COUNT]={0};
 
+static int songid=0;
+
 /* Quit.
  */
  
@@ -119,10 +121,15 @@ void shm_update(double elapsed) {
     if (in!=player->pvin) {
     
       if (!i) { // first player also triggers synth events
-        if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)) sh_ms("\x01""\x02\x00""\x20""\x10",5);
-        if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN)) sh_ms("\x01""\x01\x00""\x20""\x10",5);
-        if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)) sh_ms("\x02""\x01\x80""\x01\x00""\x20""\x20",7);
-        if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)) sh_ms("\x02""\x01\x80""\x02\x00""\x20""\x20",7);
+        if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP))       sh_ms("\x01\x20\x20\x10\x02",5);
+        if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN))   sh_ms("\x01\x14\x14\x10\x02",5);
+        if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT))   sh_ms("\x01\x18\x14\x10\x02",5);
+        if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)) {
+          //sh_ms("\x01\x18\x20\x10\x02",5);
+          songid^=1;
+          unsigned char msg[]={0x02,songid};
+          sh_ms(msg,sizeof(msg));
+        }
       }
     
       if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)&&(player->x>0)) player->x--;

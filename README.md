@@ -22,6 +22,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - [x] Insert title and favicon at tool html. ...XXX it's no problem to add those manually.
  - [x] Web: Await user input. Right now it's a cheesy hack in "ina" waiting for mousedown on Window.
  - [x] Native: hard pause on blur.
+ - [x] Web audio seems substantially louder than native.
  - [ ] Native: General input mapping.
  - [ ] Native: Suppress screensaver on gamepad input.
  - [ ] Remaining linux drivers: drm,alsafd,asound,bcm. Can and should we do an X11 no-GX driver?
@@ -38,7 +39,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [ ] malloc
  - - [ ] math
  - - [ ] PRNG
- - - [ ] Trivial synthesizer. Thinking square waves only, with no envelopes. Atari style.
+ - - [x] Trivial synthesizer. Thinking square waves only, with no envelopes. Atari style.
  - - [ ] Slightly nicer synthesizer.
  - - [x] 1-bit renderer. Each blit takes a 1-bit image and two colors.
  - - [ ] Slightly nicer renderer.

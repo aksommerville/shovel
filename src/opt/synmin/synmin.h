@@ -22,7 +22,10 @@
  *     synmin_update(buffer,framec);
  *   }
  *
- * Data format: TODO
+ * Data format
+ * No header, just a stream of events identifiable by the high bit of their leading byte:
+ *   0ttttttt                   : DELAY (t+1)*16 ms
+ *   1aaaaaaz zzzzzlll lltttttt : NOTE (a)..(z), level (l), duration (t+1)*16 ms
  */
  
 #ifndef SYNMIN_H
@@ -31,6 +34,16 @@
 int synmin_init(int rate,int chanc);
 void synmin_update(float *v,int c);
 
-void synmin_note(int hza,int hzz,float level,int durms);
+/* To play a note, you provide it as encoded:
+ *   noteida,noteidz: 0..63
+ *   level: 0..31; zero is not silent and 31 is not full amp
+ *   dur16ms: 0..63; +1
+ */
+void synmin_note(unsigned char noteida,unsigned char noteidz,unsigned char level,unsigned char dur16ms);
+
+/* Stop all voices and begin playing a song.
+ * Caller must keep it in scope for as long as it's playing; one expects it comes from static data.
+ */
+void synmin_song(const void *v,int c,int force,int repeat);
 
 #endif

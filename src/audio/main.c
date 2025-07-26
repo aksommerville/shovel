@@ -1,12 +1,36 @@
 /* audio/main.c
  *
  * Message format. Each message is identified by its leading byte.
- *   0x01 NOTE: [0x01,hz msb,hz lsb,level,duration 4ms]
- *   0x02 CHIRP: [0x02,hza msb,hza lsb,hzz msb,hzz lsb,level,duration 4ms]
+ *   0x01 NOTE: [0x01,noteida 0..63,noteidz 0..63,level 0..31,duration 16ms]
+ *   0x02 SONG: [0x02,songid]
  */
 
 #include "shovel/shovel.h"
 #include "opt/synmin/synmin.h"
+
+//TODO Convert MIDI files to synmin songs during build.
+static const unsigned char song_abc[]={
+#define DELAY(ms) (ms>>4)-1, // 16..2048
+#define NOTE(a,z,level,dur16ms) 0x80|(a<<1)|(z>>5),0xff&((z<<3)|(level>>2)),0xff&((level<<6)|dur16ms), // note 0..63, level 0..31, dur 0..31
+  NOTE(0x20,0x20,0x00,0x04)
+  DELAY(96)
+  NOTE(0x22,0x22,0x04,0x04)
+  DELAY(96)
+  NOTE(0x23,0x23,0x08,0x04)
+  DELAY(96)
+  NOTE(0x25,0x25,0x0c,0x04)
+  DELAY(96)
+  NOTE(0x27,0x27,0x10,0x04)
+  DELAY(96)
+  NOTE(0x28,0x28,0x14,0x04)
+  DELAY(96)
+  NOTE(0x2a,0x2a,0x18,0x04)
+  DELAY(96)
+  NOTE(0x2c,0x2c,0x1f,0x04)
+  DELAY(96)
+#undef DELAY
+#undef NOTE
+};
 
 static float buffer[1024];
  
@@ -22,17 +46,16 @@ void sha_update(int framec) {
   while ((msgc=sh_mr(msg,sizeof(msg)))>0) {
     switch (msg[0]) {
       case 0x01: if (msgc>=5) {
-          int hz=(msg[1]<<8)|msg[2];
-          float level=msg[3]/255.0f;
-          int durms=msg[4]<<2;
-          synmin_note(hz,hz,level,durms);
+          synmin_note(msg[1],msg[2],msg[3],msg[4]);
         } break;
-      case 0x02: if (msgc>=7) {
-          int hza=(msg[1]<<8)|msg[2];
-          int hzz=(msg[3]<<8)|msg[4];
-          float level=msg[5]/255.0f;
-          int durms=msg[6]<<2;
-          synmin_note(hza,hzz,level,durms);
+      case 0x02: if (msgc>=2) {
+          const void *src=0;
+          int srcc=0;
+          switch (msg[1]) {
+            case 0: break; // Explicitly empty.
+            case 1: src=song_abc; srcc=sizeof(song_abc); break;
+          }
+          synmin_song(src,srcc,0,1);
         } break;
     }
   }

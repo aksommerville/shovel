@@ -19,8 +19,13 @@ struct synmin_voice {
 
 extern struct synmin {
   int rate;
+  int periodv[64]; // Indexed by noteid, calculated at init. All >=2.
   struct synmin_voice voicev[SYNMIN_VOICE_LIMIT];
   int voicec;
+  const unsigned char *song;
+  int songp,songc;
+  int songdelay;
+  int songrepeat;
 } synmin;
 
 #endif
