@@ -126,7 +126,7 @@ void shm_update(double elapsed) {
         if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT))   sh_ms("\x01\x18\x14\x10\x02",5);
         if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)) {
           //sh_ms("\x01\x18\x20\x10\x02",5);
-          songid^=1;
+          if (++songid>=6) songid=0;
           unsigned char msg[]={0x02,songid};
           sh_ms(msg,sizeof(msg));
         }

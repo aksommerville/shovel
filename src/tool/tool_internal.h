@@ -59,12 +59,21 @@ int tool_convert(struct sr_encoder *dst,const void *src,int srcc,const char *dst
 #define TOOL_FMT_PNG     1
 #define TOOL_FMT_C       2 /* Image as C source. */
 #define TOOL_FMT_RAWIMG  3 /* Just the pixels of an image, binary. No dimensions. Suffixes: y1 y2 y4 y8 y16 i1 i2 i4 i8 ya8 ya16 rgb8 rgb16 rgba8 rgba16 */
+#define TOOL_FMT_MIDI    4
+#define TOOL_FMT_SYNMIN  5
 
 // If (pixfmt) is insufficient, we'll mismatch and return zero. Should be at least 6.
 int tool_split_rawimg_fmt(char *pixfmt,int pixfmta,int *chsize,const char *path);
 
+// Empty if we can't find one; caller should make up a default then.
+int tool_c_object_name(char *dst,int dsta,const char *srcpath,const char *dstpath);
+
 int tool_convert_png(struct sr_encoder *dst,const void *src,int srcc,const char *path);
 int tool_convert_c_png(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath);
 int tool_convert_rawimg_png(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath);
+int tool_convert_midi(struct sr_encoder *dst,const void *src,int srcc,const char *path);
+int tool_convert_synmin_midi(struct sr_encoder *dst,const void *src,int srcc,const char *path);
+int tool_convert_c_midi(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath);
+int tool_convert_c_any(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath); // Raw data, as an array of bytes.
 
 #endif

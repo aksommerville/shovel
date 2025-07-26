@@ -33,10 +33,10 @@ $(tool_EXE):$(tool_OFILES);$(PRECMD) $(tool_LD) -o$@ $^ $(tool_LDPOST)
 
 DATA_SRCFILES:=$(filter src/data/%,$(SRCFILES))
 DATA_CFILES:=$(patsubst src/data/%,mid/data/%.c,$(DATA_SRCFILES))
-mid/data/%.c:src/data/% $(tool_EXE);$(PRECMD) $(tool_EXE) convert -o$@ $< --depth=1 --colortype=0
+mid/data/%.c:src/data/% $(tool_EXE);$(PRECMD) $(tool_EXE) convert -o$@ $< --depth=1 --colortype=0 --synth=synmin
 
-DATA_CFILES_MAIN:=$(DATA_CFILES)
-DATA_CFILES_AUDIO:=
+DATA_CFILES_AUDIO:=$(filter %.mid.c,$(DATA_CFILES))
+DATA_CFILES_MAIN:=$(filter-out $(DATA_CFILES_AUDIO),$(DATA_CFILES))
 
 #---------------------------------------------------------------
 # Divide the targets into "WEBLIKE" and "NATIVELIKE".

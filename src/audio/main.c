@@ -8,7 +8,18 @@
 #include "shovel/shovel.h"
 #include "opt/synmin/synmin.h"
 
-//TODO Convert MIDI files to synmin songs during build.
+extern const int meadowlark_len;
+extern const unsigned char meadowlark[];
+
+extern const int even_tippier_toe_len;
+extern const unsigned char even_tippier_toe[];
+
+extern const int red_alarm_len;
+extern const unsigned char red_alarm[];
+
+extern const int we_need_norris_len;
+extern const unsigned char we_need_norris[];
+
 static const unsigned char song_abc[]={
 #define DELAY(ms) (ms>>4)-1, // 16..2048
 #define NOTE(a,z,level,dur16ms) 0x80|(a<<1)|(z>>5),0xff&((z<<3)|(level>>2)),0xff&((level<<6)|dur16ms), // note 0..63, level 0..31, dur 0..31
@@ -53,7 +64,11 @@ void sha_update(int framec) {
           int srcc=0;
           switch (msg[1]) {
             case 0: break; // Explicitly empty.
-            case 1: src=song_abc; srcc=sizeof(song_abc); break;
+            case 1: src=meadowlark; srcc=meadowlark_len; break;
+            case 2: src=even_tippier_toe; srcc=even_tippier_toe_len; break;
+            case 3: src=song_abc; srcc=sizeof(song_abc); break;
+            case 4: src=red_alarm; srcc=red_alarm_len; break;
+            case 5: src=we_need_norris; srcc=we_need_norris_len; break;
           }
           synmin_song(src,srcc,0,1);
         } break;

@@ -40,38 +40,10 @@ int tool_convert_c_png(struct sr_encoder *dst,const void *src,int srcc,const cha
   }
   
   // Determine object name from (dstpath), or (path), or make one up.
-  const char *name=0;
-  int namec=0;
-  if (dstpath) {
-    int pathp=0,stop=0;
-    for (;dstpath[pathp];pathp++) {
-      if (dstpath[pathp]=='/') {
-        name=dstpath+pathp+1;
-        namec=0;
-        stop=0;
-      } else if (dstpath[pathp]=='.') {
-        stop=1;
-      } else if (name&&!stop) {
-        namec++;
-      }
-    }
-  }
-  if (path&&!namec) {
-    int pathp=0,stop=0;
-    for (;path[pathp];pathp++) {
-      if (path[pathp]=='/') {
-        name=path+pathp+1;
-        namec=0;
-        stop=0;
-      } else if (path[pathp]=='.') {
-        stop=1;
-      } else if (name&&!stop) {
-        namec++;
-      }
-    }
-  }
-  if (!namec) {
-    name="image";
+  char name[64];
+  int namec=tool_c_object_name(name,sizeof(name),path,dstpath);
+  if ((namec<1)||(namec>sizeof(name))) {
+    memcpy(name,"image",5);
     namec=5;
   }
   

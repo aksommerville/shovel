@@ -8,18 +8,15 @@
 
 struct synmin_voice {
   int ttl; // Frames; 0=defunct
-  int p; // Frames.
-  int halftime; // (p>=halftime), we emit low instead of high.
-  int fulltime; // (p>=fulltime), (p) resets to zero.
-  int adjtime; // Frames, constant, adjust (halftime,fulltime) so often.
-  int adjclock; // Counts down from adjtime.
-  int adjd; // How much to adjust fulltime.
   float level;
+  int p; // full range
+  int dp;
+  int ddp;
 };
 
 extern struct synmin {
   int rate;
-  int periodv[64]; // Indexed by noteid, calculated at init. All >=2.
+  int ratev[64]; // Delta per noteid.
   struct synmin_voice voicev[SYNMIN_VOICE_LIMIT];
   int voicec;
   const unsigned char *song;

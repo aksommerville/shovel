@@ -141,8 +141,9 @@ static void tool_print_help() {
   fprintf(stderr,"   Or: %s convert -oDST SRC ...    # General data conversion.\n",g.exename);
   fprintf(stderr,"\n");
   fprintf(stderr,"Options for 'convert':\n");
-  fprintf(stderr,"  --depth=INTEGER\n");
-  fprintf(stderr,"  --colortype=INTEGER\n");
+  fprintf(stderr,"  --depth=INTEGER         # To/from PNG\n");
+  fprintf(stderr,"  --colortype=INTEGER     # To/from PNG\n");
+  fprintf(stderr,"  --synth=synmin|midi     # C<=MIDI\n");
   fprintf(stderr,"\n");
 }
 

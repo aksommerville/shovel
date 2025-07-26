@@ -1,5 +1,52 @@
 #include "tool_internal.h"
 
+/* Object name for C file production.
+ */
+ 
+int tool_c_object_name(char *dst,int dsta,const char *srcpath,const char *dstpath) {
+  const char *name=0;
+  int namec=0;
+  if (dstpath) {
+    int pathp=0,stop=0;
+    for (;dstpath[pathp];pathp++) {
+      if (dstpath[pathp]=='/') {
+        name=dstpath+pathp+1;
+        namec=0;
+        stop=0;
+      } else if (dstpath[pathp]=='.') {
+        stop=1;
+      } else if (name&&!stop) {
+        namec++;
+      }
+    }
+    if (namec) {
+      if (namec<=dsta) memcpy(dst,name,namec);
+      if (namec<dsta) dst[namec]=0;
+      return namec;
+    }
+  }
+  if (srcpath&&!namec) {
+    int pathp=0,stop=0;
+    for (;srcpath[pathp];pathp++) {
+      if (srcpath[pathp]=='/') {
+        name=srcpath+pathp+1;
+        namec=0;
+        stop=0;
+      } else if (srcpath[pathp]=='.') {
+        stop=1;
+      } else if (name&&!stop) {
+        namec++;
+      }
+    }
+    if (namec) {
+      if (namec<=dsta) memcpy(dst,name,namec);
+      if (namec<dsta) dst[namec]=0;
+      return namec;
+    }
+  }
+  return 0;
+}
+
 /* Read the multitude of rawimg suffixes.
  */
  
@@ -63,6 +110,7 @@ static int tool_format_from_suffix(const char *path) {
   #define CK(ext,fmt) if ((tailc>=sizeof(ext)-1)&&!memcmp(tail+tailc-sizeof(ext)+1,ext,sizeof(ext)-1)) return TOOL_FMT_##fmt;
   CK(".png",PNG)
   CK(".c",C)
+  CK(".mid",MIDI)
   #undef CK
   
   // rawimg does its own thing.
@@ -80,6 +128,7 @@ static int tool_guess_format(const uint8_t *src,int srcc,const char *path) {
   int fmt=tool_format_from_suffix(path);
   if (fmt!=TOOL_FMT_UNKNOWN) return fmt;
   if ((srcc>=8)&&!memcmp(src,"\x89PNG\r\n\x1a\n",8)) return TOOL_FMT_PNG;
+  if ((srcc>=8)&&!memcmp(src,"MThd\0\0\0\6",8)) return TOOL_FMT_MIDI;
   return TOOL_FMT_UNKNOWN;
 }
 
@@ -91,7 +140,7 @@ static int tool_guess_output_format(int srcfmt,const char *path) {
   if (fmt!=TOOL_FMT_UNKNOWN) return fmt;
   // Is there a default expected output format per input format?
   switch (srcfmt) {
-    // ...hmm, no
+    // ...hmm, no. Maybe we should default to C? I'm thinking embed-in-executable will be the only means of data delivery.
   }
   return TOOL_FMT_UNKNOWN;
 }
@@ -124,13 +173,24 @@ int tool_convert(struct sr_encoder *dst,const void *src,int srcc,const char *dst
     case TOOL_FMT_C: switch (srcfmt) {
         case TOOL_FMT_PNG: return tool_convert_c_png(dst,src,srcc,srcpath,dstpath);
         case TOOL_FMT_C: return sr_encode_raw(dst,src,srcc);
-        case TOOL_FMT_RAWIMG: break; // doable
+        case TOOL_FMT_MIDI: return tool_convert_c_midi(dst,src,srcc,srcpath,dstpath);
+        default: return tool_convert_c_any(dst,src,srcc,srcpath,dstpath);
       } break;
       
     case TOOL_FMT_RAWIMG: switch (srcfmt) {
         case TOOL_FMT_PNG: return tool_convert_rawimg_png(dst,src,srcc,srcpath,dstpath);
         case TOOL_FMT_C: break; // doable
         case TOOL_FMT_RAWIMG: return sr_encode_raw(dst,src,srcc);
+      } break;
+      
+    case TOOL_FMT_MIDI: switch (srcfmt) {
+        case TOOL_FMT_MIDI: return tool_convert_midi(dst,src,srcc,srcpath);
+        case TOOL_FMT_SYNMIN: break; // doable
+        case TOOL_FMT_C: break; // doable
+      } break;
+      
+    case TOOL_FMT_SYNMIN: switch (srcfmt) {
+        case TOOL_FMT_MIDI: return tool_convert_synmin_midi(dst,src,srcc,srcpath);
       } break;
       
     default: {
@@ -144,4 +204,30 @@ int tool_convert(struct sr_encoder *dst,const void *src,int srcc,const char *dst
   }
   fprintf(stderr,"%s: Conversion %d=>%d not implemented\n",srcpath,srcfmt,dstfmt);
   return -2;
+}
+
+/* C from raw data.
+ */
+ 
+int tool_convert_c_any(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath) {
+  char name[64];
+  int namec=tool_c_object_name(name,sizeof(name),path,dstpath);
+  if ((namec<1)||(namec>sizeof(name))) {
+    memcpy(name,"object",6);
+    namec=6;
+  }
+  sr_encode_fmt(dst,"const int %.*s_len=%d;\n",namec,name,srcc);
+  sr_encode_fmt(dst,"const unsigned char %.*s[]={\n",namec,name);
+  int linestart=dst->c;
+  const uint8_t *p=src;
+  int c=srcc;
+  for (;c-->0;p++) {
+    sr_encode_fmt(dst,"%d,",*p);
+    if (dst->c-linestart>=100) {
+      sr_encode_u8(dst,0x0a);
+      linestart=dst->c;
+    }
+  }
+  sr_encode_raw(dst,"};\n",3);
+  return sr_encoder_require(dst,0);
 }

@@ -15,17 +15,16 @@ int synmin_init(int rate,int chanc) {
    * To mitigate rounding errors, calculate the whole thing floating-point first.
    */
   float fpv[64];
-  fpv[32]=(float)rate/440.0f; // Reference note: 32 = 440 hz
+  fpv[32]=440.0f/(float)rate; // Reference note: 32 = 440 hz
   const float TWELFTH_ROOT_TWO=1.0594630943592953f;
   int i=11;
   float *p=fpv+33;
-  for (;i-->0;p++) *p=p[-1]/TWELFTH_ROOT_TWO;
-  for (i=44,p=fpv+44;i<64;i++,p++) *p=p[-12]*0.5f;
-  for (i=32,p=fpv+31;i-->0;p--) *p=p[12]*2.0f;
-  int *dst=synmin.periodv;
+  for (;i-->0;p++) *p=p[-1]*TWELFTH_ROOT_TWO;
+  for (i=44,p=fpv+44;i<64;i++,p++) *p=p[-12]*2.0f;
+  for (i=32,p=fpv+31;i-->0;p--) *p=p[12]*0.5f;
+  int *dst=synmin.ratev;
   for (p=fpv,i=64;i-->0;dst++,p++) {
-    *dst=(int)((*p)+0.5f);
-    if (*dst<2) *dst=2;
+    *dst=(int)((*p)*4294967296.0f);
   }
   
   return 0;
@@ -55,21 +54,10 @@ void synmin_song(const void *v,int c,int force,int repeat) {
 static void synmin_voice_update(float *v,int c,struct synmin_voice *voice) {
   int i=c;
   for (;i-->0;v++) {
-    if (voice->p>=voice->fulltime) {
-      voice->p=0;
-      (*v)+=voice->level;
-    } else if (voice->p>=voice->halftime) {
-      voice->p++;
-      (*v)-=voice->level;
-    } else {
-      voice->p++;
-      (*v)+=voice->level;
-    }
-    if (--(voice->adjclock)<=0) {
-      voice->adjclock+=voice->adjtime;
-      voice->fulltime+=voice->adjd;
-      voice->halftime=voice->fulltime>>1;
-    }
+    voice->dp+=voice->ddp;
+    voice->p+=voice->dp;
+    if (voice->p&0x80000000) (*v)+=voice->level;
+    else (*v)-=voice->level;
   }
   voice->ttl-=c;
 }
@@ -208,26 +196,12 @@ void synmin_note(unsigned char noteida,unsigned char noteidz,unsigned char level
   
   voice->p=0;
   if ((voice->ttl=synmin_frames_from_ms((1+dur16ms)<<4))<1) voice->ttl=1;
-  voice->level=0.050f+level/100.0f;
-  voice->fulltime=synmin.periodv[noteida];
-  voice->halftime=voice->fulltime>>1;
+  voice->level=0.050f+level/200.0f;
+  voice->dp=synmin.ratev[noteida];
   if (noteida==noteidz) {
-    voice->adjtime=0;
-    voice->adjclock=0;
-    voice->adjd=0;
+    voice->ddp=0;
   } else {
-    int ftz=synmin.periodv[noteidz];
-    int dtotal=ftz-voice->fulltime;
-    if ((dtotal>-voice->ttl)&&(dtotal<voice->ttl)) { // Typical. Sliding period by an amount less than the frame count.
-      voice->adjtime=voice->ttl/dtotal;
-      if (!voice->adjtime) voice->adjtime=1;
-      else if (voice->adjtime<0) voice->adjtime=-voice->adjtime;
-      if (!(voice->adjd=dtotal/voice->adjtime)) voice->adjd=(dtotal<0)?-1:1;
-    } else { // Sliding by more than the frame count. Adjust on each frame.
-      voice->adjtime=1;
-      voice->adjd=dtotal/voice->ttl;
-      if (!voice->adjd) voice->adjd=(dtotal<0)?-1:1;
-    }
-    voice->adjclock=voice->adjtime;
+    int dpz=synmin.ratev[noteidz];
+    voice->ddp=(dpz-voice->dp)/voice->ttl;
   }
 }

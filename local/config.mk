@@ -9,7 +9,7 @@ TARGETS:=web linux generic
 NATIVE_TARGET:=linux
 
 # "tool" target is required, and must not be declared as a TARGET.
-tool_OPT_ENABLE:=fs serial png
+tool_OPT_ENABLE:=fs serial png midi
 tool_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,tool)
 tool_LD:=gcc
 tool_LDPOST:=-lm -lz

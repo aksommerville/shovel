@@ -44,3 +44,4 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [x] 1-bit renderer. Each blit takes a 1-bit image and two colors.
  - - [ ] Slightly nicer renderer.
  - - [ ] PNG-like image decoder. Can we use regular PNG? Would need zlib.
+ - [x] synmin: Requiring integer period for notes breaks tuning at higher frequencies. Plainly audible in meadowlark.
