@@ -1,40 +1,53 @@
+/* audio/main.c
+ *
+ * Message format. Each message is identified by its leading byte.
+ *   0x01 NOTE: [0x01,hz msb,hz lsb,level,duration 4ms]
+ *   0x02 CHIRP: [0x02,hza msb,hza lsb,hzz msb,hzz lsb,level,duration 4ms]
+ */
+
 #include "shovel/shovel.h"
+#include "opt/synmin/synmin.h"
 
 static float buffer[1024];
-static int halfperiod;
-static int p=0;
-static float level=0.125;
-
-/* Init.
- */
  
 int sha_init(int rate,int chanc) {
-  sh_log("sha_init");
-  halfperiod=rate/440;
+  if (synmin_init(rate,chanc)<0) return -1;
   sh_spcm(0,buffer,sizeof(buffer)/sizeof(buffer[0]));
   return 0;
 }
-
-/* Update.
- */
  
 void sha_update(int framec) {
-
-  unsigned char msg;
-  while (sh_mr(&msg,1)>=1) {
-    switch (msg) {
-      case 1: halfperiod<<=1; break;
-      case 0xff: halfperiod>>=1; break;
+  unsigned char msg[256];
+  int msgc;
+  while ((msgc=sh_mr(msg,sizeof(msg)))>0) {
+    switch (msg[0]) {
+      case 0x01: if (msgc>=5) {
+          int hz=(msg[1]<<8)|msg[2];
+          float level=msg[3]/255.0f;
+          int durms=msg[4]<<2;
+          synmin_note(hz,hz,level,durms);
+        } break;
+      case 0x02: if (msgc>=7) {
+          int hza=(msg[1]<<8)|msg[2];
+          int hzz=(msg[3]<<8)|msg[4];
+          float level=msg[5]/255.0f;
+          int durms=msg[6]<<2;
+          synmin_note(hza,hzz,level,durms);
+        } break;
     }
   }
-
-  float *dst=buffer;
-  for (;framec-->0;dst++) {
-    *dst=level;
-    p++;
-    if (p>=halfperiod) {
-      p=0;
-      level=-level;
-    }
-  }
+  synmin_update(buffer,framec);
 }
+
+/* Annoying clang glue.
+ * clang inserts calls to memset and memcpy despite our having told it "nostdlib".
+ * Whatever, we can implement them.
+ */
+
+#if USE_web
+void *memset(void *s, int n, long c) {
+  unsigned char *p=s;
+  for (;c-->0;p++) *p=n;
+  return s;
+}
+#endif

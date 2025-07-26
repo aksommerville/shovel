@@ -84,14 +84,6 @@ int shm_init() {
   return 0;
 }
 
-/* Send a message to the synthesizer.
- */
- 
-static void synth_event(int v) {
-  unsigned char msg=v;
-  sh_ms(&msg,1);
-}
-
 /* Text.
  */
  
@@ -127,8 +119,10 @@ void shm_update(double elapsed) {
     if (in!=player->pvin) {
     
       if (!i) { // first player also triggers synth events
-        if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)&&(player->y>0)) synth_event(-1);
-        if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN)&&(player->y<FBH-1)) synth_event(1);
+        if ((in&SH_BTN_UP)&&!(player->pvin&SH_BTN_UP)) sh_ms("\x01""\x02\x00""\x20""\x10",5);
+        if ((in&SH_BTN_DOWN)&&!(player->pvin&SH_BTN_DOWN)) sh_ms("\x01""\x01\x00""\x20""\x10",5);
+        if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)) sh_ms("\x02""\x01\x80""\x01\x00""\x20""\x20",7);
+        if ((in&SH_BTN_RIGHT)&&!(player->pvin&SH_BTN_RIGHT)) sh_ms("\x02""\x01\x80""\x02\x00""\x20""\x20",7);
       }
     
       if ((in&SH_BTN_LEFT)&&!(player->pvin&SH_BTN_LEFT)&&(player->x>0)) player->x--;
@@ -204,7 +198,7 @@ void shm_update(double elapsed) {
  */
 
 #if USE_web
-void *memset(void *s, int c, long n) {
+void *memset(void *s, int n, long c) {
   unsigned char *p=s;
   for (;c-->0;p++) *p=n;
   return s;
