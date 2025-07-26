@@ -31,10 +31,11 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - [ ] SDL drivers?
  - [ ] genioc: argv
  - [ ] Record and playback native sessions. Playback in headless with video and audio capture.
- - [ ] Aggressive native minification.
+ - [x] Aggressive native minification.
  - - [x] Compile options. Remove all symbols, etc.
- - - [ ] Drivers are mostly generic with glue, can be made substantially smaller.
- - - [ ] Eliminate or reduce log messages?
+ - - [x] Drivers are mostly generic with glue, can be made substantially smaller.
+ - - - Before: 64128 ... 60032 ...the reduction is entirely from removing a song. I guess '-Os' is working better than I assumed!
+ - - [x] Eliminate or reduce log messages? ...no point
  - [ ] Optional client-side utilities.
  - - [ ] malloc
  - - [ ] math

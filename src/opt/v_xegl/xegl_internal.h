@@ -54,7 +54,6 @@ struct xegl {
   int screensaver_suppressed;
   int focus;
   int cursor_visible;
-  int cursor_locked;
 };
 
 int xegl_codepoint_from_keysym(int keysym);

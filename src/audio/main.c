@@ -11,9 +11,6 @@
 extern const int meadowlark_len;
 extern const unsigned char meadowlark[];
 
-extern const int even_tippier_toe_len;
-extern const unsigned char even_tippier_toe[];
-
 extern const int red_alarm_len;
 extern const unsigned char red_alarm[];
 
@@ -65,7 +62,7 @@ void sha_update(int framec) {
           switch (msg[1]) {
             case 0: break; // Explicitly empty.
             case 1: src=meadowlark; srcc=meadowlark_len; break;
-            case 2: src=even_tippier_toe; srcc=even_tippier_toe_len; break;
+            case 2: break; // Was even_tippier_toe, but that had too many unshovellable bits.
             case 3: src=song_abc; srcc=sizeof(song_abc); break;
             case 4: src=red_alarm; srcc=red_alarm_len; break;
             case 5: src=we_need_norris; srcc=we_need_norris_len; break;

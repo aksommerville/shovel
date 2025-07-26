@@ -299,20 +299,6 @@ void xegl_show_cursor(struct xegl *xegl,int show) {
   }
 }
 
-/* Lock/unlock cursor.
- */
- 
-void xegl_lock_cursor(struct xegl *xegl,int lock) {
-  if (lock) {
-    if (xegl->cursor_locked) return;
-    xegl->cursor_locked=1;
-    xegl_show_cursor(xegl,0);
-  } else {
-    if (!xegl->cursor_locked) return;
-    xegl->cursor_locked=0;
-  }
-}
-
 /* Fullscreen.
  */
  
