@@ -1,10 +1,41 @@
 #include "shovel/shovel.h"
+#include "opt/r1b/r1b.h"
 #include <stdint.h>
+
+extern const int witchy_w,witchy_h,witchy_stride,witchy_depth,witchy_colortype;
+extern const unsigned char witchy_pixels[];
 
 #define FBW 64
 #define FBH 64
-#define PLAYER_COUNT 3
 static uint32_t fb[FBW*FBH];
+static struct r1b_img32 fb_image={
+  .v=fb,
+  .w=FBW,
+  .h=FBH,
+  .stridewords=FBW,
+};
+
+static const uint8_t player_image_bits[]={
+#define b(a,b,c,d,e,f,g,h) ((0##a<<7)|(0##b<<6)|(0##c<<5)|(0##d<<4)|(0##e<<3)|(0##f<<2)|(0##g<<1)|(0##h)),
+  b( 1,1,1,1,1,1,1,1 )
+  b( 1, , , , , , ,1 )
+  b( 1, , , , , , ,1 )
+  b( 1, , , , , , ,1 )
+  b( 1, , , , , , ,1 )
+  b( 1, , , , , , ,1 )
+  b( 1, , , , , , ,1 )
+  b( 1,1,1,1,1,1,1,1 )
+#undef B
+};
+static const struct r1b_img1 player_image={
+  .v=(void*)player_image_bits,
+  .w=8,
+  .h=8,
+  .stride=1,
+};
+static struct r1b_img1 witchy_image; // Can't assign via initializer due to external symbols.
+
+#define PLAYER_COUNT 3
 static struct player {
   int pvin;
   int x,y;
@@ -25,6 +56,11 @@ void shm_quit(int status) {
 int shm_init() {
   sh_log("shm_init");
   
+  witchy_image.v=(void*)witchy_pixels;
+  witchy_image.w=witchy_w;
+  witchy_image.h=witchy_h;
+  witchy_image.stride=witchy_stride;
+  
   playerv[0].x=1;
   playerv[0].y=FBH>>1;
   playerv[0].color=0xff0000ff;
@@ -38,18 +74,6 @@ int shm_init() {
   playerv[2].color=0xffff8000;
   
   return 0;
-}
-
-/* Rendering.
- */
- 
-static void fill_rect(int x,int y,int w,int h,uint32_t color) { // Must be in bounds.
-  uint32_t *dstrow=fb+y*FBW+x;
-  for (;h-->0;dstrow+=FBW) {
-    uint32_t *dstp=dstrow;
-    int xi=w;
-    for (;xi-->0;dstp++) *dstp=color;
-  }
 }
 
 /* Send a message to the synthesizer.
@@ -108,17 +132,23 @@ void shm_update(double elapsed) {
   }
   
   // A bit heavy-handed, but let's redraw the framebuffer from scratch each frame.
-  fill_rect(1,1,FBW-2,FBH-2,0xff000000);
-  fill_rect(0,0,FBW,1,0xffffffff);
-  fill_rect(0,0,1,FBH,0xffffffff);
-  fill_rect(0,FBH-1,FBW,1,0xffffffff);
-  fill_rect(FBW-1,0,1,FBH,0xffffffff);
+  r1b_img32_fill_rect(&fb_image,1,1,FBW-2,FBH-2,0xff000000);
+  r1b_img32_fill_rect(&fb_image,0,0,FBW,1,0xffffffff);
+  r1b_img32_fill_rect(&fb_image,0,0,1,FBH,0xffffffff);
+  r1b_img32_fill_rect(&fb_image,0,FBH-1,FBW,1,0xffffffff);
+  r1b_img32_fill_rect(&fb_image,FBW-1,0,1,FBH,0xffffffff);
   for (i=PLAYER_COUNT,player=playerv;i-->0;player++) {
     uint32_t color;
     if (player->hilite==2) color=0xffffffff;
     else if (player->hilite==1) color=0xff808080;
     else color=player->color;
-    fb[player->y*FBW+player->x]=color;
+    //fb[player->y*FBW+player->x]=color;
+    r1b_img32_blit_img1(
+      &fb_image,&witchy_image,
+      player->x-(witchy_image.w>>1),player->y-(witchy_image.h>>1),
+      0,0,witchy_image.w,witchy_image.h,
+      0,color,0
+    );
   }
   
   sh_fb(fb, FBW, FBH);

@@ -99,6 +99,37 @@ static int main_html() {
   return 0;
 }
 
+/* Convert file.
+ */
+ 
+static int main_convert() {
+  if (!g.dstpath||(g.srcpathc!=1)) {
+    fprintf(stderr,"%s: 'convert' requires exactly one input and output path.\n",g.exename);
+    return -2;
+  }
+  void *src=0;
+  int srcc=file_read(&src,g.srcpathv[0]);
+  if (srcc<0) {
+    fprintf(stderr,"%s: Failed to read file.\n",g.srcpathv[0]);
+    return -2;
+  }
+  struct sr_encoder dst={0};
+  int err=tool_convert(&dst,src,srcc,g.dstpath,g.srcpathv[0]);
+  free(src);
+  if (err<0) {
+    sr_encoder_cleanup(&dst);
+    if (err!=-2) fprintf(stderr,"%s: Unspecified error converting (dstpath='%s')\n",g.srcpathv[0],g.dstpath);
+    return -2;
+  }
+  err=file_write(g.dstpath,dst.v,dst.c);
+  sr_encoder_cleanup(&dst);
+  if (err<0) {
+    fprintf(stderr,"%s: Failed to write file, %d bytes.\n",g.dstpath,dst.c);
+    return -2;
+  }
+  return 0;
+}
+
 /* --help
  */
  
@@ -106,6 +137,7 @@ static void tool_print_help() {
   fprintf(stderr,"Usage: %s --help                   # Print this message.\n",g.exename);
   fprintf(stderr,"   Or: %s pack -oROM MAIN AUDIO    # Make ROM file.\n",g.exename);
   fprintf(stderr,"   Or: %s html -oHTML TEMPLATE     # Make index.html.\n",g.exename);
+  fprintf(stderr,"   Or: %s convert -oDST SRC        # General data conversion.\n",g.exename);
 }
 
 /* Main.
@@ -151,6 +183,7 @@ int main(int argc,char **argv) {
   if (!g.command) { tool_print_help(); err=-2; }
   else if (!strcmp(g.command,"pack")) err=main_pack();
   else if (!strcmp(g.command,"html")) err=main_html();
+  else if (!strcmp(g.command,"convert")) err=main_convert();
   else {
     fprintf(stderr,"%s: Unknown command '%s'.\n",g.exename,g.command);
     err=-2;

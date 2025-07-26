@@ -29,6 +29,16 @@ all:$(tool_EXE)
 $(tool_EXE):$(tool_OFILES);$(PRECMD) $(tool_LD) -o$@ $^ $(tool_LDPOST)
 
 #---------------------------------------------------------------
+# Compile data files. This is fairly opinionated, expect to adjust for each game.
+
+DATA_SRCFILES:=$(filter src/data/%,$(SRCFILES))
+DATA_CFILES:=$(patsubst src/data/%,mid/data/%.c,$(DATA_SRCFILES))
+mid/data/%.c:src/data/%;$(PRECMD) $(tool_EXE) convert -o$@ $<
+
+DATA_CFILES_MAIN:=$(DATA_CFILES)
+DATA_CFILES_AUDIO:=
+
+#---------------------------------------------------------------
 # Divide the targets into "WEBLIKE" and "NATIVELIKE".
 # WEBLIKE targets build two independant Wasm modules, then combine them into a ROM file.
 # NATIVELIKE targets are generic, nothing peculiar to Shovel about them.
@@ -45,12 +55,14 @@ WEBRT_SRCFILES:=$(filter src/www/%,$(SRCFILES))
 define WEBLIKE_RULES
   $1_MAIN_CFILES:=$$(filter src/main/%.c $$(addprefix src/opt/,$$(addsuffix /%.c,$$($1_MAIN_OPT_ENABLE))),$(SRCFILES))
   $1_AUDIO_CFILES:=$$(filter src/audio/%.c $$(addprefix src/opt/,$$(addsuffix /%.c,$$($1_AUDIO_OPT_ENABLE))),$(SRCFILES))
-  $1_MAIN_OFILES:=$$(patsubst src/%.c,mid/$1-main/%.o,$$($1_MAIN_CFILES))
-  $1_AUDIO_OFILES:=$$(patsubst src/%.c,mid/$1-audio/%.o,$$($1_AUDIO_CFILES))
+  $1_MAIN_OFILES:=$$(patsubst src/%.c,mid/$1-main/%.o,$$($1_MAIN_CFILES)) $$(patsubst mid/%.c,mid/$1-main/%.o,$$(DATA_CFILES_MAIN))
+  $1_AUDIO_OFILES:=$$(patsubst src/%.c,mid/$1-audio/%.o,$$($1_AUDIO_CFILES)) $$(patsubst mid/%.c,mid/$1-audio/%.o,$$(DATA_CFILES_AUDIO))
   -include $$($1_MAIN_OFILES:.o=.d)
   -include $$($1_AUDIO_OFILES:.o=.d)
   mid/$1-main/%.o:src/%.c;$$(PRECMD) $$($1_MAIN_CC) -o$$@ $$<
   mid/$1-audio/%.o:src/%.c;$$(PRECMD) $$($1_AUDIO_CC) -o$$@ $$<
+  mid/$1-main/%.o:mid/%.c;$$(PRECMD) $$($1_MAIN_CC) -o$$@ $$<
+  mid/$1-audio/%.o:mid/%.c;$$(PRECMD) $$($1_AUDIO_CC) -o$$@ $$<
   $1_MAIN_WASM:=mid/$1-main/main.wasm
   $1_AUDIO_WASM:=mid/$1-audio/audio.wasm
   $$($1_MAIN_WASM):$$($1_MAIN_OFILES);$$(PRECMD) $$($1_MAIN_LD) -o$$@ $$^ $$($1_MAIN_LDPOST)
@@ -78,9 +90,10 @@ endif
 
 define NATIVELIKE_RULES
   $1_CFILES:=$$(filter src/main/%.c src/audio/%.c $$(addprefix src/opt/,$$(addsuffix /%.c,$$($1_OPT_ENABLE))),$(SRCFILES))
-  $1_OFILES:=$$(patsubst src/%.c,mid/$1/%.o,$$($1_CFILES))
+  $1_OFILES:=$$(patsubst src/%.c,mid/$1/%.o,$$($1_CFILES)) $$(patsubst mid/%.c,mid/$1/%.o,$$(DATA_CFILES))
   -include $$($1_OFILES:.o=.d)
   mid/$1/%.o:src/%.c;$$(PRECMD) $$($1_CC) -o$$@ $$<
+  mid/$1/%.o:mid/%.c;$$(PRECMD) $$($1_CC) -o$$@ $$<
   $$($1_EXE):$$($1_OFILES);$$(PRECMD) $$($1_LD) -o$$@ $$^ $$($1_LDPOST)
   all:$$($1_EXE)
 endef

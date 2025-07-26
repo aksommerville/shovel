@@ -31,7 +31,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - [ ] genioc: argv
  - [ ] Record and playback native sessions. Playback in headless with video and audio capture.
  - [ ] Aggressive native minification.
- - - [ ] Compile options. Remove all symbols, etc.
+ - - [x] Compile options. Remove all symbols, etc.
  - - [ ] Drivers are mostly generic with glue, can be made substantially smaller.
  - - [ ] Eliminate or reduce log messages?
  - [ ] Optional client-side utilities.
@@ -40,6 +40,6 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [ ] PRNG
  - - [ ] Trivial synthesizer. Thinking square waves only, with no envelopes. Atari style.
  - - [ ] Slightly nicer synthesizer.
- - - [ ] 1-bit renderer. Each blit takes a 1-bit image and two colors.
+ - - [x] 1-bit renderer. Each blit takes a 1-bit image and two colors.
  - - [ ] Slightly nicer renderer.
  - - [ ] PNG-like image decoder. Can we use regular PNG? Would need zlib.

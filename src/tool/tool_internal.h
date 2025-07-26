@@ -44,4 +44,21 @@ int html_token_next(struct html_token *token,const char *src,int srcc);
 int js_token_measure(const char *src,int srcc);
 int js_space_required(const char *a,int ac,const char *b,int bc); // Do we need a space to distinguish these tokens?
 
+/* Anything-to-anything conversion.
+ * You must provide both paths, to hint at the desired format. Empty or some dummy if you need to.
+ */
+int tool_convert(struct sr_encoder *dst,const void *src,int srcc,const char *dstpath,const char *srcpath);
+
+#define TOOL_FMT_UNKNOWN 0
+#define TOOL_FMT_PNG     1
+#define TOOL_FMT_C       2 /* Image as C source. */
+#define TOOL_FMT_RAWIMG  3 /* Just the pixels of an image, binary. No dimensions. Suffixes: y1 y2 y4 y8 y16 i1 i2 i4 i8 ya8 ya16 rgb8 rgb16 rgba8 rgba16 */
+
+// If (pixfmt) is insufficient, we'll mismatch and return zero. Should be at least 6.
+int tool_split_rawimg_fmt(char *pixfmt,int pixfmta,int *chsize,const char *path);
+
+int tool_convert_png(struct sr_encoder *dst,const void *src,int srcc,const char *path);
+int tool_convert_c_png(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath);
+int tool_convert_rawimg_png(struct sr_encoder *dst,const void *src,int srcc,const char *path,const char *dstpath);
+
 #endif
