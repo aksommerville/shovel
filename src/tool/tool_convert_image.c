@@ -24,6 +24,21 @@ int tool_convert_c_png(struct sr_encoder *dst,const void *src,int srcc,const cha
   struct png_image *image=png_decode(src,srcc,path);
   if (!image) return path?-2:-1;
   
+  // Convert if requested. GIMP has this obnoxious habit of saving 1-bit images as 8-bit, so we'll do this a lot.
+  int depth=tool_arg_int("depth",5,-1);
+  int colortype=tool_arg_int("colortype",9,-1);
+  if ((depth>=0)||(colortype>=0)) {
+    if (depth<0) depth=image->depth;
+    if (colortype<0) colortype=image->colortype;
+    struct png_image *converted=png_image_reformat(image,depth,colortype);
+    if (!converted) {
+      png_image_del(image);
+      FAIL("Failed to convert to depth=%d colortype=%d.",depth,colortype)
+    }
+    png_image_del(image);
+    image=converted;
+  }
+  
   // Determine object name from (dstpath), or (path), or make one up.
   const char *name=0;
   int namec=0;

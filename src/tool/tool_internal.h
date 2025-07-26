@@ -10,6 +10,7 @@
 #include "opt/serial/serial.h"
 
 #define SRCPATH_LIMIT 16
+#define ARGV_LIMIT 16
 
 extern struct g {
   const char *exename;
@@ -17,7 +18,12 @@ extern struct g {
   const char *dstpath;
   const char *srcpathv[SRCPATH_LIMIT];
   int srcpathc;
+  const char *argv[ARGV_LIMIT]; // Only arguments not consumed above; usually empty.
+  int argc;
 } g;
+
+int tool_arg_string(void *dstpp,const char *k,int kc);
+int tool_arg_int(const char *k,int kc,int fallback);
 
 int minify_html(struct sr_encoder *dst,const char *src,int srcc,const char *path);
 

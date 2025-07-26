@@ -33,7 +33,7 @@ $(tool_EXE):$(tool_OFILES);$(PRECMD) $(tool_LD) -o$@ $^ $(tool_LDPOST)
 
 DATA_SRCFILES:=$(filter src/data/%,$(SRCFILES))
 DATA_CFILES:=$(patsubst src/data/%,mid/data/%.c,$(DATA_SRCFILES))
-mid/data/%.c:src/data/%;$(PRECMD) $(tool_EXE) convert -o$@ $<
+mid/data/%.c:src/data/% $(tool_EXE);$(PRECMD) $(tool_EXE) convert -o$@ $< --depth=1 --colortype=0
 
 DATA_CFILES_MAIN:=$(DATA_CFILES)
 DATA_CFILES_AUDIO:=

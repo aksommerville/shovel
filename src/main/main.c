@@ -2,11 +2,13 @@
 #include "opt/r1b/r1b.h"
 #include <stdint.h>
 
-extern const int witchy_w,witchy_h,witchy_stride,witchy_depth,witchy_colortype;
-extern const unsigned char witchy_pixels[];
+R1B_DECL(witchy)
+R1B_DECL(font6x8) // built-in spacing
+R1B_DECL(font4x6) // built-in spacing
+R1B_DECL(font3x3) // no spacing
 
 #define FBW 64
-#define FBH 64
+#define FBH 36
 static uint32_t fb[FBW*FBH];
 static struct r1b_img32 fb_image={
   .v=fb,
@@ -15,25 +17,10 @@ static struct r1b_img32 fb_image={
   .stridewords=FBW,
 };
 
-static const uint8_t player_image_bits[]={
-#define b(a,b,c,d,e,f,g,h) ((0##a<<7)|(0##b<<6)|(0##c<<5)|(0##d<<4)|(0##e<<3)|(0##f<<2)|(0##g<<1)|(0##h)),
-  b( 1,1,1,1,1,1,1,1 )
-  b( 1, , , , , , ,1 )
-  b( 1, , , , , , ,1 )
-  b( 1, , , , , , ,1 )
-  b( 1, , , , , , ,1 )
-  b( 1, , , , , , ,1 )
-  b( 1, , , , , , ,1 )
-  b( 1,1,1,1,1,1,1,1 )
-#undef B
-};
-static const struct r1b_img1 player_image={
-  .v=(void*)player_image_bits,
-  .w=8,
-  .h=8,
-  .stride=1,
-};
-static struct r1b_img1 witchy_image; // Can't assign via initializer due to external symbols.
+static struct r1b_img1 witchy_image;
+static struct r1b_img1 font6x8_image;
+static struct r1b_img1 font4x6_image;
+static struct r1b_img1 font3x3_image;
 
 #define PLAYER_COUNT 3
 static struct player {
@@ -41,6 +28,9 @@ static struct player {
   int x,y;
   uint32_t color;
   int hilite;
+  const struct r1b_img1 *image;
+  int srcx,srcy,w,h;
+  uint8_t xform;
 } playerv[PLAYER_COUNT]={0};
 
 /* Quit.
@@ -56,22 +46,40 @@ void shm_quit(int status) {
 int shm_init() {
   sh_log("shm_init");
   
-  witchy_image.v=(void*)witchy_pixels;
-  witchy_image.w=witchy_w;
-  witchy_image.h=witchy_h;
-  witchy_image.stride=witchy_stride;
+  R1B_ASSIGN(witchy)
+  R1B_ASSIGN(font6x8)
+  R1B_ASSIGN(font4x6)
+  R1B_ASSIGN(font3x3)
   
   playerv[0].x=1;
   playerv[0].y=FBH>>1;
   playerv[0].color=0xff0000ff;
+  playerv[0].image=&witchy_image;
+  playerv[0].srcx=8;
+  playerv[0].srcy=0;
+  playerv[0].w=8;
+  playerv[0].h=8;
+  playerv[0].xform=0;
   
   playerv[1].x=FBW>>1;
   playerv[1].y=FBH>>1;
   playerv[1].color=0xff00c000;
+  playerv[1].image=&witchy_image;
+  playerv[1].srcx=16;
+  playerv[1].srcy=0;
+  playerv[1].w=8;
+  playerv[1].h=8;
+  playerv[1].xform=0;
   
   playerv[2].x=FBW-2;
   playerv[2].y=FBH>>1;
   playerv[2].color=0xffff8000;
+  playerv[2].image=&witchy_image;
+  playerv[2].srcx=24;
+  playerv[2].srcy=0;
+  playerv[2].w=8;
+  playerv[2].h=8;
+  playerv[2].xform=R1B_XFORM_XREV;
   
   return 0;
 }
@@ -82,6 +90,29 @@ int shm_init() {
 static void synth_event(int v) {
   unsigned char msg=v;
   sh_ms(&msg,1);
+}
+
+/* Text.
+ */
+ 
+static void draw_string(int x,int y,const struct r1b_img1 *img,const char *src,int srcc,uint32_t xbgr,int extra) {
+  int colw=img->w>>4;
+  int rowh=img->h/6;
+  int xstride=colw+extra;
+  if (!src) return;
+  if (srcc<0) { srcc=0; while (src[srcc]) srcc++; }
+  for (;srcc-->0;src++,x+=xstride) {
+    unsigned char ch=*src;
+    if ((ch<=0x20)||(ch>=0x7f)) continue;
+    ch-=0x20;
+    int srcx=(ch&15)*colw;
+    int srcy=(ch>>4)*rowh;
+    r1b_img32_blit_img1(
+      &fb_image,img,
+      x,y,srcx,srcy,colw,rowh,
+      0,xbgr,0
+    );
+  }
 }
 
 /* Update.
@@ -142,14 +173,27 @@ void shm_update(double elapsed) {
     if (player->hilite==2) color=0xffffffff;
     else if (player->hilite==1) color=0xff808080;
     else color=player->color;
-    //fb[player->y*FBW+player->x]=color;
     r1b_img32_blit_img1(
-      &fb_image,&witchy_image,
-      player->x-(witchy_image.w>>1),player->y-(witchy_image.h>>1),
-      0,0,witchy_image.w,witchy_image.h,
-      0,color,0
+      &fb_image,player->image,
+      player->x-(player->w>>1),player->y-(player->h>>1),
+      player->srcx,player->srcy,player->w,player->h,
+      0,color,player->xform
     );
   }
+  
+  const struct r1b_img1 *img=&font3x3_image;
+  int extra=1;
+  int ystride=img->h/6+1;
+  draw_string(2,2+ystride* 0,img,"the quick brown",-1,0xffffffff,extra);
+  draw_string(2,2+ystride* 1,img,"fox jumps over ",-1,0xffc0c0ff,extra);
+  draw_string(2,2+ystride* 2,img,"the lazy dog   ",-1,0xffc0ffc0,extra);
+  draw_string(2,2+ystride* 3,img,"12345678 times!",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 4,img,"A 64x64 frame  ",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 5,img,"buffer does not",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 6,img,"allow much room",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 7,img,"for text. :(   ",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 8,img,"OK row.        ",-1,0xffc0c0c0,extra);
+  draw_string(2,2+ystride* 9,img,"Last valid row.",-1,0xffc0c0c0,extra);
   
   sh_fb(fb, FBW, FBH);
 }

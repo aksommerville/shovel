@@ -134,10 +134,16 @@ static int main_convert() {
  */
  
 static void tool_print_help() {
+  fprintf(stderr,"\n");
   fprintf(stderr,"Usage: %s --help                   # Print this message.\n",g.exename);
   fprintf(stderr,"   Or: %s pack -oROM MAIN AUDIO    # Make ROM file.\n",g.exename);
   fprintf(stderr,"   Or: %s html -oHTML TEMPLATE     # Make index.html.\n",g.exename);
-  fprintf(stderr,"   Or: %s convert -oDST SRC        # General data conversion.\n",g.exename);
+  fprintf(stderr,"   Or: %s convert -oDST SRC ...    # General data conversion.\n",g.exename);
+  fprintf(stderr,"\n");
+  fprintf(stderr,"Options for 'convert':\n");
+  fprintf(stderr,"  --depth=INTEGER\n");
+  fprintf(stderr,"  --colortype=INTEGER\n");
+  fprintf(stderr,"\n");
 }
 
 /* Main.
@@ -169,8 +175,13 @@ int main(int argc,char **argv) {
       continue;
     }
     if (arg[0]=='-') {
-      fprintf(stderr,"%s: Unexpected option '%s'\n",g.exename,arg);
-      return 1;
+      if (g.argc>=ARGV_LIMIT) {
+        fprintf(stderr,"%s: Too many arguments.\n",g.exename);
+        return 1;
+      }
+      while (arg[0]=='-') arg++;
+      g.argv[g.argc++]=arg;
+      continue;
     }
     if (!g.command) g.command=arg;
     else if (g.srcpathc<SRCPATH_LIMIT) g.srcpathv[g.srcpathc++]=arg;
@@ -191,4 +202,45 @@ int main(int argc,char **argv) {
   if (err>=0) return 0;
   if (err!=-2) fprintf(stderr,"%s: Unspecified error running command '%s'.\n",g.exename,g.command);
   return 1;
+}
+
+/* Get loose arguments.
+ */
+ 
+int tool_arg_string(void *dstpp,const char *k,int kc) {
+  if (!k) return 0;
+  if (kc<0) { kc=0; while (k[kc]) kc++; }
+  if (!kc) return 0;
+  const char **arg=g.argv;
+  int i=g.argc;
+  for (;i-->0;arg++) {
+    if (memcmp(*arg,k,kc)) continue;
+    if (!(*arg)[kc]) {
+      *(const void**)dstpp="1";
+      return 1;
+    }
+    if ((*arg)[kc]=='=') {
+      const char *v=(*arg)+kc+1;
+      int vc=0;
+      while (v[vc]) vc++;
+      *(const void**)dstpp=v;
+      return vc;
+    }
+  }
+  return 0;
+}
+
+int tool_arg_int(const char *k,int kc,int fallback) {
+  const char *v=0;
+  int vc=tool_arg_string(&v,k,kc);
+  if (vc<1) return fallback;
+  int vn=0;
+  int i=0;
+  for (;i<vc;i++) {
+    int digit=v[i]-'0';
+    if ((digit<0)||(digit>9)) return fallback;
+    vn*=10;
+    vn+=digit;
+  }
+  return vn;
 }

@@ -24,6 +24,19 @@ struct r1b_img1 {
   int stride; // Stride in bytes.
 };
 
+/* In coordination with our build tool, use these macros to declare an image file and assign it to an r1b_img1.
+ */
+#define R1B_DECL(name) \
+  extern const int name##_w,name##_h,name##_stride,name##_pixelsize; \
+  extern const unsigned char name##_pixels[];
+#define R1B_ASSIGN(name) \
+  if (name##_pixelsize==1) { \
+    name##_image.w=name##_w; \
+    name##_image.h=name##_h; \
+    name##_image.stride=name##_stride; \
+    name##_image.v=(void*)name##_pixels; \
+  }
+
 /* Solid rectangle directly onto a 32-bit image.
  */
 void r1b_img32_fill_rect(struct r1b_img32 *dst,int x,int y,int w,int h,unsigned int xbgr);
