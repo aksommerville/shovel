@@ -238,6 +238,7 @@ int io_video_commit() {
   if (!v_xegl.fb) return 0;
   xegl_begin(v_xegl.xegl);
 
+  glViewport(0,0,v_xegl.w,v_xegl.h);
   glClearColor(0.0f,0.0f,0.0f,1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
   

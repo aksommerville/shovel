@@ -34,3 +34,4 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
  - - [ ] Slightly nicer synthesizer.
  - - [ ] Slightly nicer renderer.
  - - [ ] PNG-like image decoder. Can we use regular PNG? Would need zlib.
+ - [x] xegl: Bounds go weird when you resize.
