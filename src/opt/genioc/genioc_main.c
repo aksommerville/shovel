@@ -171,11 +171,105 @@ static int genioc_update() {
   return 0;
 }
 
+/* Store path.
+ */
+ 
+static int genioc_get_store_path(char *dst,int dsta) {
+  if (!dst||(dsta<1)) return -1;
+  return snprintf(dst,dsta,"%s.save",genioc.exename);
+}
+
+/* Encode store.
+ * (u8 kc,u8 vc,... k,...v)
+ * Fails if any string is too long, or the output buffer is too short.
+ */
+ 
+static int genioc_store_encode(uint8_t *dst,int dsta) {
+  int dstc=0;
+  const struct field *field=genioc.fieldv;
+  int i=genioc.fieldc;
+  for (;i-->0;field++) {
+    if (field->kc>0xff) return -1;
+    if (field->vc>0xff) return -1;
+    if (dstc>dsta-2-field->kc-field->vc) return -1;
+    dst[dstc++]=field->kc;
+    dst[dstc++]=field->vc;
+    memcpy(dst+dstc,field->k,field->kc); dstc+=field->kc;
+    memcpy(dst+dstc,field->v,field->vc); dstc+=field->vc;
+  }
+  return dstc;
+}
+
+/* Add an entry to the store and fail if it already exists.
+ */
+ 
+static int genioc_store_add(const char *k,int kc,const char *v,int vc) {
+  if (!k||(kc<1)||!v||(vc<1)) return -1;
+  struct field *field=genioc.fieldv;
+  int i=genioc.fieldc;
+  for (;i-->0;field++) {
+    if ((field->kc==kc)&&!memcmp(field->k,k,kc)) return -1;
+  }
+  if (genioc.fieldc>=genioc.fielda) {
+    int na=genioc.fielda+16;
+    if (na>INT_MAX/sizeof(struct field)) return -1;
+    void *nv=realloc(genioc.fieldv,sizeof(struct field)*na);
+    if (!nv) return -1;
+    genioc.fieldv=nv;
+    genioc.fielda=na;
+  }
+  char *nk=malloc(kc+1);
+  if (!nk) return -1;
+  char *nv=malloc(vc+1);
+  if (!nv) { free(nk); return -1; }
+  memcpy(nk,k,kc);
+  nk[kc]=0;
+  memcpy(nv,v,vc);
+  nv[vc]=0;
+  field=genioc.fieldv+genioc.fieldc++;
+  field->k=nk;
+  field->kc=kc;
+  field->v=nv;
+  field->vc=vc;
+  return 0;
+}
+
+/* Decode store.
+ * Eliminates any existing content.
+ */
+ 
+static int genioc_store_decode(const uint8_t *src,int srcc) {
+  while (genioc.fieldc>0) {
+    genioc.fieldc--;
+    struct field *field=genioc.fieldv+genioc.fieldc;
+    if (field->k) free(field->k);
+    if (field->v) free(field->v);
+  }
+  int srcp=0;
+  for (;;) {
+    if (srcp>srcc-2) break;
+    int kc=src[srcp++];
+    int vc=src[srcp++];
+    if (srcp>srcc-kc-vc) return -1;
+    const char *k=(char*)src+srcp; srcp+=kc;
+    const char *v=(char*)src+srcp; srcp+=vc;
+    if (genioc_store_add(k,kc,v,vc)<0) return -1;
+  }
+  return 0;
+}
+
 /* Load store.
  */
  
 int genioc_store_load() {
-  fprintf(stderr,"TODO %s\n",__func__);
+  char path[1024];
+  int pathc=genioc_get_store_path(path,sizeof(path));
+  if ((pathc<1)||(pathc>=sizeof(path))) return 0;
+  char *src=0;
+  int srcc=file_read(&src,path);
+  if (srcc<0) return 0;
+  int err=genioc_store_decode(src,srcc);
+  free(src);
   return 0;
 }
 
@@ -183,7 +277,13 @@ int genioc_store_load() {
  */
  
 int genioc_store_save() {
-  fprintf(stderr,"TODO %s\n",__func__);
+  char path[1024];
+  int pathc=genioc_get_store_path(path,sizeof(path));
+  if ((pathc<1)||(pathc>=sizeof(path))) return 0;
+  uint8_t serial[1024];
+  int serialc=genioc_store_encode(serial,sizeof(serial));
+  if ((serialc<0)||(serialc>sizeof(serial))) return 0;
+  if (file_write(path,serial,serialc)<0) return 0;
   return 0;
 }
 

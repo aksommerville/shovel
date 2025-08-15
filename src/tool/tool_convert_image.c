@@ -70,6 +70,7 @@ int tool_convert_c_png(struct sr_encoder *dst,const void *src,int srcc,const cha
   }
   
   sr_encode_raw(dst,"};\n",3);
+  png_image_del(image);
   return sr_encoder_require(dst,0);
 }
 

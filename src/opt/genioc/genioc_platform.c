@@ -105,7 +105,7 @@ int sh_ss(const char *k,int kc,const char *v,int vc) {
   int i=0;
   for (;i<genioc.fieldc;i++,field++) {
     if (field->kc!=kc) continue;
-    if (memcpy(field->k,k,kc)) continue;
+    if (memcmp(field->k,k,kc)) continue;
     if (vc) {
       if ((vc==field->vc)&&!memcmp(field->v,v,vc)) return 0; // Unchanged.
       char *nv=malloc(vc+1);
