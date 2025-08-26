@@ -21,11 +21,11 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
  - [ ] Native: General input mapping.
  - [ ] Native: Suppress screensaver on gamepad input.
- - [ ] Remaining linux drivers: drm,alsafd,asound,bcm. Can and should we do an X11 no-GX driver?
+ - [ ] Remaining linux drivers: alsafd,asound,bcm. Can and should we do an X11 no-GX driver?
  - [ ] MacOS drivers.
  - [ ] MS Windows drivers.
  - [ ] SDL drivers?
- - [ ] genioc: argv
+ - [x] genioc: argv
  - [ ] Record and playback native sessions. Playback in headless with video and audio capture.
  - [ ] Optional client-side utilities.
  - - [ ] malloc

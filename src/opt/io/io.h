@@ -23,6 +23,7 @@ struct io_video_setup {
   const char *title;
   const void *iconrgba;
   int iconw,iconh;
+  const char *device;
   
   /* The only callbacks are close and focus.
    * Raw keyboard events should be tracked if available; driver should deliver them directly to io_input.

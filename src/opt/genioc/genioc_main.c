@@ -59,18 +59,70 @@ static void genioc_cb_focus(int focus) {
   }
 }
 
+/* --help
+ */
+ 
+static void genioc_print_help() {
+  fprintf(stderr,"\nUsage: %s [OPTIONS]\n\n",genioc.exename);
+  fprintf(stderr,
+    "OPTIONS:\n"
+    "  --help                Print this message and exit.\n"
+    "  --fullscreen=0|1      Start in fullscreen if driver supports it.\n"
+    "  --video-device=NAME   DRM only, eg '/dev/dri/card1'.\n"
+    "  --audio-device=NAME   Usage depends on driver.\n"
+    "  --audio-rate=44100    Output rate in Hertz, recommendation only.\n"
+    "  --audio-chanc=2       Output channel count, typically 1 or 2. We only produce 1.\n"
+    "  --audio-buffer=0      Audio buffer length in frames, recommendation only.\n"
+    "\n"
+  );
+}
+
+/* Evaluate integer for argv purposes.
+ * Returns (fallback) if malformed.
+ */
+ 
+static int genioc_eval_int(const char *src,int fallback) {
+  if (!src||!*src) return fallback;
+  int v=0;
+  for (;*src;src++) {
+    int digit=(*src)-'0';
+    if ((digit<0)||(digit>9)) return fallback;
+    if (v>INT_MAX/10) return fallback;
+    v*=10;
+    if (v>INT_MAX-digit) return fallback;
+    v+=digit;
+  }
+  return v;
+}
+
 /* Init.
  */
  
 static int genioc_init(int argc,char **argv) {
   int err;
+  
+  const char *audio_device=0,*video_device=0;
+  int audio_rate=44100,audio_chanc=2,audio_buffer=0,fullscreen=0;
+  int argi=1; while (argi<argc) {
+    const char *arg=argv[argi++];
+    if (!arg||!arg[0]) continue;
+         if (!memcmp(arg,"--audio-device=",15)) audio_device=arg+15;
+    else if (!memcmp(arg,"--video-device=",15)) video_device=arg+15;
+    else if (!memcmp(arg,"--audio-rate=",13)) audio_rate=genioc_eval_int(arg+13,audio_rate);
+    else if (!memcmp(arg,"--audio-chanc=",14)) audio_chanc=genioc_eval_int(arg+14,audio_chanc);
+    else if (!memcmp(arg,"--audio-buffer=",15)) audio_buffer=genioc_eval_int(arg+15,audio_buffer);
+    else if (!memcmp(arg,"--fullscreen=",13)) fullscreen=genioc_eval_int(arg+13,fullscreen);
+    else if (!strcmp(arg,"--help")) { genioc_print_help(); genioc.sigc=1; return 0; }
+    else { genioc_print_help(); return -2; }
+  }
+  
   if ((err=genioc_store_load())<0) return err;
   {
     struct io_audio_setup setup={
-      .rate=44100,//TODO
-      .chanc=2,
-      .device=0,
-      .buffer=0,
+      .rate=audio_rate,
+      .chanc=audio_chanc,
+      .device=audio_device,
+      .buffer=audio_buffer,
     };
     if ((err=io_audio_init(&setup))<0) {
       if (err!=-2) fprintf(stderr,"%s: Unspecified error initializing audio (%s).\n",genioc.exename,io_audio_driver_name);
@@ -83,13 +135,14 @@ static int genioc_init(int argc,char **argv) {
       .h=0,
       .fbw=160,//TODO is this knowable?
       .fbh=90,
-      .fullscreen=0,
+      .fullscreen=fullscreen,
       .title="TODO: Game title",
       .iconrgba=0,
       .iconw=0,
       .iconh=0,
       .cb_close=genioc_cb_close,
       .cb_focus=genioc_cb_focus,
+      .device=video_device,
     };
     if ((err=io_video_init(&setup))<0) {
       if (err!=-2) fprintf(stderr,"%s: Unspecified error initializing video (%s).\n",genioc.exename,io_video_driver_name);

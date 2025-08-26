@@ -2,8 +2,8 @@
 # A template is in the shared repo, but after cloning this will not commit by default.
 # Modify to suit this particular build host.
 
-# TARGETS: Which hosts do we build for? web linux macos mswin generic, or make one up and define it below.
-TARGETS:=web linux generic
+# TARGETS: Which hosts do we build for? web linux linuxdrm macos mswin generic, or make one up and define it below.
+TARGETS:=web linux linuxdrm generic
 
 # NATIVE_TARGET: The one involved in 'make run', possibly other privileged roles.
 NATIVE_TARGET:=linux
@@ -35,6 +35,13 @@ linux_CC:=gcc -c -MMD -Os -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDE
 linux_LD:=gcc -s -Os
 linux_LDPOST:=-lm -lpulse-simple -lX11 -lXinerama -lGL -lEGL
 linux_EXE:=out/linux/$(PROJNAME)
+
+# "linuxdrm": Could just overwrite "linux" for this, but sometimes I do want both windowed and fullscreen-only builds.
+linuxdrm_OPT_ENABLE:=genioc io a_pulse v_drmgx i_evdev r1b synmin fs
+linuxdrm_CC:=gcc -c -MMD -Os -Werror -Wimplicit -Wno-parentheses -Isrc -I/usr/include/libdrm $(call OPTDEF,linuxdrm)
+linuxdrm_LD:=gcc -s -Os
+linuxdrm_LDPOST:=-lm -lpulse-simple -lGL -lEGL -ldrm -lgbm
+linuxdrm_EXE:=out/linuxdrm/$(PROJNAME)
 
 # "macos" has additional packaging rules managed by Makefile. We're only concerned here with the executable, which works just like other hosts.
 macos_OPT_ENABLE:=macos io fs r1b synmin
