@@ -10,7 +10,7 @@
 #include <GL/glext.h> // mswin needs this explicitly included; linux does not
 
 const char *io_video_driver_name="xegl";
-const int io_video_driver_provides_events=1;
+const int io_video_provides_events=1;
 
 static struct {
   struct xegl *xegl;

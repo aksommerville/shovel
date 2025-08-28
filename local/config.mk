@@ -23,35 +23,35 @@ web_MAIN_LD:=wasm-ld --no-entry -z stack-size=4194304 --no-gc-sections --import-
 web_AUDIO_LD:=wasm-ld --no-entry -z stack-size=4194304 --no-gc-sections --import-undefined --export-table --export=sha_init --export=sha_update
 
 # "generic" to build a headless native version of the app, maybe for automated testing?
-generic_OPT_ENABLE:=genioc io fs a_dummy v_dummy i_dummy r1b synmin
+generic_OPT_ENABLE:=genioc io fs a_dummy v_dummy i_dummy r1b synmin gcfg inmgr
 generic_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,generic)
 generic_LD:=gcc
 generic_LDPOST:=-lm
 generic_EXE:=out/generic/$(PROJNAME)
 
 # "linux": Highly configurable. You must ensure that CC, LD, and LDPOST agree with OPT_ENABLE. See the relevant opt headers for more.
-linux_OPT_ENABLE:=genioc io fs a_pulse v_xegl i_evdev xinerama r1b synmin
+linux_OPT_ENABLE:=genioc io fs a_pulse v_xegl i_evdev xinerama r1b synmin gcfg inmgr
 linux_CC:=gcc -c -MMD -Os -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,linux)
 linux_LD:=gcc -s -Os
 linux_LDPOST:=-lm -lpulse-simple -lX11 -lXinerama -lGL -lEGL
 linux_EXE:=out/linux/$(PROJNAME)
 
 # "linuxdrm": Could just overwrite "linux" for this, but sometimes I do want both windowed and fullscreen-only builds.
-linuxdrm_OPT_ENABLE:=genioc io a_pulse v_drmgx i_evdev r1b synmin fs
+linuxdrm_OPT_ENABLE:=genioc io a_pulse v_drmgx i_evdev r1b synmin fs gcfg inmgr
 linuxdrm_CC:=gcc -c -MMD -Os -Werror -Wimplicit -Wno-parentheses -Isrc -I/usr/include/libdrm $(call OPTDEF,linuxdrm)
 linuxdrm_LD:=gcc -s -Os
 linuxdrm_LDPOST:=-lm -lpulse-simple -lGL -lEGL -ldrm -lgbm
 linuxdrm_EXE:=out/linuxdrm/$(PROJNAME)
 
 # "macos" has additional packaging rules managed by Makefile. We're only concerned here with the executable, which works just like other hosts.
-macos_OPT_ENABLE:=macos io fs r1b synmin
+macos_OPT_ENABLE:=macos io fs r1b synmin gcfg inmgr
 macos_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,macos)
 macos_LD:=gcc
 macos_LDPOST:=-lm
 macos_EXE:=out/macos/$(PROJNAME).app/Contents/MacOS/$(PROJNAME)
 
 # "mswin" isn't currently implemented and probably never will be.
-mswin_OPT_ENABLE:=mswin genioc io fs r1b synmin
+mswin_OPT_ENABLE:=mswin genioc io fs r1b synmin gcfg inmgr
 mswin_CC:=gcc -c -MMD -O3 -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,mswin)
 mswin_LD:=gcc
 mswin_LDPOST:=-lm

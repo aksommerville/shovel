@@ -10,7 +10,7 @@
 #include <GL/glext.h> // mswin needs this explicitly included; linux does not
 
 const char *io_video_driver_name="drmgx";
-const int io_video_driver_provides_events=0;
+const int io_video_provides_events=0;
 
 static struct {
   const void *fb;
