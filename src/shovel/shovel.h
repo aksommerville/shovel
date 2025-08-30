@@ -115,6 +115,9 @@ double sh_now();
 int sh_sg(char *v,int va,const char *k,int kc);
 int sh_ss(const char *k,int kc,const char *v,int vc);
  
+/* Button IDs match inmgr exactly.
+ * Beware, we only expect LEFT,RIGHT,UP,DOWN,SOUTH,WEST,AUX1 to be mapped.
+ */
 #define SH_BTN_LEFT   0x0001
 #define SH_BTN_RIGHT  0x0002
 #define SH_BTN_UP     0x0004

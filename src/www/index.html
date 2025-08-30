@@ -224,7 +224,7 @@ function gp() { // Poll gamepads. Assume Standard Mapping, and assign to players
       pid++;
       b(0, 0x10); // south
       b(2, 0x20); // west
-      b(9, 0x40); // start
+      b(9, 0x1000); // start
       b(12, 0x04); // up
       b(13, 0x08); // down
       b(14, 0x01); // left

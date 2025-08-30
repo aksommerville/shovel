@@ -97,17 +97,5 @@ void io_input_set_key(int keycode,int value) {
  */
 
 int sh_in(int plrid) {
-  int state=inmgr_get_player(plrid);
-  if (state) {
-    state=
-      ((state&INMGR_BTN_LEFT)?SH_BTN_LEFT:0)|
-      ((state&INMGR_BTN_RIGHT)?SH_BTN_RIGHT:0)|
-      ((state&INMGR_BTN_UP)?SH_BTN_UP:0)|
-      ((state&INMGR_BTN_DOWN)?SH_BTN_DOWN:0)|
-      ((state&INMGR_BTN_SOUTH)?SH_BTN_SOUTH:0)|
-      ((state&INMGR_BTN_WEST)?SH_BTN_WEST:0)|
-      ((state&INMGR_BTN_AUX1)?SH_BTN_AUX1:0)|
-    0;
-  }
-  return state;
+  return inmgr_get_player(plrid);
 }
