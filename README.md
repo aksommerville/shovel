@@ -19,7 +19,7 @@ But I want the project as self-contained as possible, so no 3rd-party code in th
 
 ## TODO
 
- - [ ] Native: General input mapping.
+ - [x] Native: General input mapping.
  - [ ] Native: Suppress screensaver on gamepad input.
  - [ ] Remaining linux drivers: alsafd,asound,bcm. Can and should we do an X11 no-GX driver?
  - [ ] MacOS drivers.

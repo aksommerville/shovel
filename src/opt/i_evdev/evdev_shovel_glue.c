@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <signal.h>
 
 const char *io_input_driver_name="evdev";
 
@@ -26,7 +27,7 @@ void io_input_quit() {
  */
  
 static int cb_cap(int type,int code,int hidusage,int lo,int hi,int value,void *userdata) {
-  inmgr_connect_more(userdata,(type<<16)|code,hidusage,lo,hi,value);
+  inmgr_connect_more(*(int*)userdata,(type<<16)|code,hidusage,lo,hi,value);
   return 0;
 }
  
@@ -34,14 +35,9 @@ static void cb_connect(struct evdev *evdev,struct evdev_device *device) {
   device->devid=i_evdev.devid_next++;
   int vid=0,pid=0,version=0;
   const char *name=evdev_device_get_ids(&vid,&pid,&version,device);
-  void *ctx=inmgr_connect_begin(device->devid,vid,pid,version,name,-1);
-  if (!ctx) return;
-  evdev_device_for_each_button(device,cb_cap,ctx);
-  if (inmgr_connect_end(ctx)>0) {
-    fprintf(stderr,"Connected device %04x:%04x:%04x '%s'\n",vid,pid,version,name);
-  } else {
-    fprintf(stderr,"Ignoring device %04x:%04x:%04x '%s'\n",vid,pid,version,name);
-  }
+  inmgr_connect_begin(device->devid,vid,pid,version,name,-1);
+  evdev_device_for_each_button(device,cb_cap,&device->devid);
+  inmgr_connect_end(device->devid);
 }
  
 static void cb_disconnect(struct evdev *evdev,struct evdev_device *device) {
@@ -53,20 +49,25 @@ static void cb_button(struct evdev *evdev,struct evdev_device *device,int type,i
   inmgr_event(device->devid,(type<<16)|code,value);
 }
 
+static void cb_quit() {
+  // We don't have any clear means of reporting inmgr's events back to main.
+  // Blurrrrgh whatever, just raise SIGINT, we know that will quit clean.
+  raise(SIGINT);
+}
+
 /* Init.
  */
 
 int io_input_init() {
   if (i_evdev.evdev) return -1;
-  i_evdev.devid_next=1;
+  i_evdev.devid_next=2;
   inmgr_init();
-  inmgr_set_buttons(INMGR_BTN_LEFT|INMGR_BTN_RIGHT|INMGR_BTN_UP|INMGR_BTN_DOWN|INMGR_BTN_SOUTH|INMGR_BTN_WEST|INMGR_BTN_AUX1);
+  inmgr_set_button_mask(INMGR_BTN_LEFT|INMGR_BTN_RIGHT|INMGR_BTN_UP|INMGR_BTN_DOWN|INMGR_BTN_SOUTH|INMGR_BTN_WEST|INMGR_BTN_AUX1);
+  inmgr_set_signal(INMGR_BTN_QUIT,cb_quit);
   
   // Connect the system keyboard.
   if (io_video_provides_events) {
-    void *ctx=inmgr_connect_begin(0,0,0,0,"System Keyboard",15);
-    inmgr_connect_keyboard(ctx);
-    inmgr_connect_end(ctx);
+    inmgr_connect_keyboard(1);
   }
   
   struct evdev_delegate delegate={
@@ -89,7 +90,7 @@ int io_input_update() {
  */
 
 void io_input_set_key(int keycode,int value) {
-  inmgr_event(0,keycode,value);
+  inmgr_event(1,keycode,value);
 }
 
 /* Report a state to the game.

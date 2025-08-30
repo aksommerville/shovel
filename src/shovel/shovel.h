@@ -115,13 +115,22 @@ double sh_now();
 int sh_sg(char *v,int va,const char *k,int kc);
 int sh_ss(const char *k,int kc,const char *v,int vc);
  
-#define SH_BTN_LEFT       0x01
-#define SH_BTN_RIGHT      0x02
-#define SH_BTN_UP         0x04
-#define SH_BTN_DOWN       0x08
-#define SH_BTN_SOUTH      0x10 /* Primary. */
-#define SH_BTN_WEST       0x20 /* Secondary. */
-#define SH_BTN_AUX1       0x40
+#define SH_BTN_LEFT   0x0001
+#define SH_BTN_RIGHT  0x0002
+#define SH_BTN_UP     0x0004
+#define SH_BTN_DOWN   0x0008
+#define SH_BTN_SOUTH  0x0010
+#define SH_BTN_WEST   0x0020
+#define SH_BTN_EAST   0x0040
+#define SH_BTN_NORTH  0x0080
+#define SH_BTN_L1     0x0100
+#define SH_BTN_R1     0x0200
+#define SH_BTN_L2     0x0400
+#define SH_BTN_R2     0x0800
+#define SH_BTN_AUX1   0x1000
+#define SH_BTN_AUX2   0x2000
+#define SH_BTN_AUX3   0x4000
+#define SH_BTN_CD     0x8000
 
 /* Get the state of a virtual input device, keyed by player id.
  * Player zero is the aggregate of all devices, and most appropriate for single-player games.
