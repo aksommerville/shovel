@@ -30,7 +30,7 @@ generic_LDPOST:=-lm
 generic_EXE:=out/generic/$(PROJNAME)
 
 # "linux": Highly configurable. You must ensure that CC, LD, and LDPOST agree with OPT_ENABLE. See the relevant opt headers for more.
-linux_OPT_ENABLE:=genioc io fs a_pulse v_xegl i_evdev xinerama r1b synmin inmgr
+linux_OPT_ENABLE:=genioc io fs a_alsafd v_xegl i_evdev xinerama r1b synmin inmgr
 linux_CC:=gcc -c -MMD -Os -Werror -Wimplicit -Wno-parentheses -Isrc $(call OPTDEF,linux)
 linux_LD:=gcc -s -Os
 linux_LDPOST:=-lm -lpulse-simple -lX11 -lXinerama -lGL -lEGL
